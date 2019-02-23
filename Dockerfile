@@ -1,6 +1,5 @@
 FROM golang:1-alpine as builder
-RUN apk add --no-cache git curl openssh ca-certificates && \
-    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+RUN apk add --no-cache git curl openssh ca-certificates
 
 ENV PROJECT_DIR /app
 

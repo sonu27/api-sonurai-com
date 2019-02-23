@@ -2,16 +2,16 @@ package internal
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
-
-	"google.golang.org/api/iterator"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
-	"google.golang.org/api/option"
-
 	"github.com/go-chi/chi"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -62,7 +62,8 @@ func getWallpaper(w http.ResponseWriter, r *http.Request) {
 func Bootstrap() error {
 	ctx := context.Background()
 
-	sa := option.WithCredentialsFile("serviceAccount.json")
+	saJSON, _ := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
+	sa := option.WithCredentialsJSON(saJSON)
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		return err

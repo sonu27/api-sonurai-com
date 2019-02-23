@@ -10,14 +10,15 @@ import (
 	"strings"
 
 	"cloud.google.com/go/firestore"
-
-	"google.golang.org/api/iterator"
-
 	firebase "firebase.google.com/go"
+	"github.com/joho/godotenv"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 func main() {
+	_ = godotenv.Load()
+
 	err := Bootstrap()
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Bootstrap error: "+err.Error())

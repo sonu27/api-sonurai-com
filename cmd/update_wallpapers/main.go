@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api/internal"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,11 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"cloud.google.com/go/firestore"
-	firebase "firebase.google.com/go"
 	"github.com/joho/godotenv"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 func main() {
@@ -28,19 +25,25 @@ func main() {
 func Bootstrap() error {
 	ctx := context.Background()
 
-	sa := option.WithCredentialsFile("serviceAccount.json")
-	app, err := firebase.NewApp(ctx, nil, sa)
-	if err != nil {
-		log.Fatalln(err)
+	markets := []string{
+		"en-ww",
+		"en-gb",
+		"en-us",
+		"zh-cn",
 	}
 
-	client, err := app.Firestore(ctx)
-	if err != nil {
-		log.Fatalln(err)
+	for _, v := range markets {
+		updateWallpapers(ctx, v)
 	}
-	defer client.Close()
 
-	resp, _ := http.Get("https://www.bing.com/HPImageArchive.aspx?format=js&n=10&mbl=1&mkt=en-ww")
+	return nil
+}
+
+func updateWallpapers(ctx context.Context, market string) {
+	firestoreClient := internal.GetFirestoreClient(ctx)
+	defer firestoreClient.Close()
+
+	resp, _ := http.Get("https://www.bing.com/HPImageArchive.aspx?format=js&n=10&mbl=1&mkt=" + market)
 	defer resp.Body.Close()
 
 	var v map[string][]map[string]interface{}
@@ -53,7 +56,8 @@ func Bootstrap() error {
 		name = strings.Replace(name, "/th?id=OHR.", "", 1)
 		x := strings.Split(name, "_")
 		name = x[0]
-		_, err = client.Collection("wallpapers").Doc(name).Set(ctx, map[string]interface{}{
+
+		_, err := firestoreClient.Collection("wallpapers").Doc(name).Set(ctx, map[string]interface{}{
 			"title": v["copyright"],
 			"name":  name,
 			"date":  v["startdate"],
@@ -62,18 +66,4 @@ func Bootstrap() error {
 			log.Fatalf("Failed adding: %v", err)
 		}
 	}
-
-	iter := client.Collection("wallpapers").OrderBy("date", firestore.Desc).Documents(ctx)
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		fmt.Println(doc.Data())
-	}
-
-	return nil
 }

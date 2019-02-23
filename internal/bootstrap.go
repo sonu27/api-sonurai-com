@@ -62,17 +62,7 @@ func getWallpaper(w http.ResponseWriter, r *http.Request) {
 func Bootstrap() error {
 	ctx := context.Background()
 
-	saJSON, _ := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
-	sa := option.WithCredentialsJSON(saJSON)
-	app, err := firebase.NewApp(ctx, nil, sa)
-	if err != nil {
-		return err
-	}
-
-	firestoreClient, err = app.Firestore(ctx)
-	if err != nil {
-		return err
-	}
+	firestoreClient = GetFirestoreClient(ctx)
 	defer firestoreClient.Close()
 
 	r := chi.NewRouter()
@@ -82,4 +72,20 @@ func Bootstrap() error {
 	http.ListenAndServe(":8080", r)
 
 	return nil
+}
+
+func GetFirestoreClient(ctx context.Context) *firestore.Client {
+	saJSON, _ := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
+	sa := option.WithCredentialsJSON(saJSON)
+	app, err := firebase.NewApp(ctx, nil, sa)
+	if err != nil {
+		panic(err)
+	}
+
+	client, err := app.Firestore(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return client
 }

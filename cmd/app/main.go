@@ -9,10 +9,11 @@ import (
 )
 
 func main() {
-	_ = godotenv.Load()
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Error loading .env file")
+	}
 
-	err := internal.Bootstrap()
-	if err != nil {
+	if err := internal.Bootstrap(); err != nil {
 		fmt.Fprint(os.Stderr, "Bootstrap error: "+err.Error())
 	}
 }

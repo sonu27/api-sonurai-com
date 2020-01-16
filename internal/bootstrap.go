@@ -92,7 +92,7 @@ func getWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	b, _ := cache.Get(id)
 	if len(b) > 0 {
 		w.Header().Set("Cache-Control", "max-age=86400")
-		w.Header().Set("ETag", fmt.Sprintf("%x", md5.Sum(b)))
+		w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
 		w.Write(b)
 		return
 	}
@@ -151,7 +151,7 @@ func outputAndCache(w http.ResponseWriter, id string, data map[string]interface{
 	b, _ := json.Marshal(result)
 
 	w.Header().Set("Cache-Control", "max-age=86400")
-	w.Header().Set("ETag", fmt.Sprintf("%x", md5.Sum(b)))
+	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
 	w.Write(b)
 	cache.Set(id, b)
 }
@@ -195,7 +195,7 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 	b, _ := json.Marshal(res)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.Header().Set("Cache-Control", "max-age=86400")
-	w.Header().Set("ETag", fmt.Sprintf("%x", md5.Sum(b)))
+	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
 	w.Write(b)
 }
 

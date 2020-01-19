@@ -91,7 +91,7 @@ func getWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	b, _ := cache.Get(id)
 	if len(b) > 0 {
-		w.Header().Set("Cache-Control", "max-age=86400")
+		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
 		w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
 		w.Write(b)
 		return
@@ -150,7 +150,7 @@ func outputAndCache(w http.ResponseWriter, id string, data map[string]interface{
 	mapstructure.Decode(data, &result)
 	b, _ := json.Marshal(result)
 
-	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
 	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
 	w.Write(b)
 	cache.Set(id, b)
@@ -194,7 +194,7 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, _ := json.Marshal(res)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
 	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
 	w.Write(b)
 }
@@ -216,4 +216,21 @@ func GetFirestoreClient(ctx context.Context) *firestore.Client {
 	}
 
 	return client
+}
+
+func secondsExpiresIn() int {
+	now := time.Now()
+	expireTime := time.Date(now.Year(), now.Month(), now.Day(), 8, 5, 0, 0, time.UTC)
+	secsInDay := 86400
+
+	var secondsExpiresIn int
+	if now.Before(expireTime) {
+		diff := expireTime.Sub(now)
+		secondsExpiresIn = int(diff.Seconds())
+	} else {
+		diff := now.Sub(expireTime)
+		secondsExpiresIn = secsInDay - int(diff.Seconds())
+	}
+
+	return secondsExpiresIn
 }

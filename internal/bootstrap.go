@@ -174,6 +174,9 @@ func isNumeric(s string) bool {
 }
 
 func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	iter := new(firestore.DocumentIterator)
+
 	offset := 0
 	if v := r.URL.Query().Get("offset"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
@@ -181,12 +184,33 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ctx := r.Context()
-	iter := firestoreClient.Collection(firestoreCollection).
+	iter = firestoreClient.Collection(firestoreCollection).
 		OrderBy("date", firestore.Desc).
+		OrderBy("id", firestore.Asc).
 		Offset(offset).
 		Limit(10).
 		Documents(ctx)
+
+	startAfterDate := 0
+	if v := r.URL.Query().Get("startAfterDate"); v != "" {
+		if i, err := strconv.Atoi(v); err == nil {
+			startAfterDate = i
+		}
+	}
+
+	startAfterID := ""
+	if v := r.URL.Query().Get("startAfterID"); v != "" {
+		startAfterID = v
+	}
+
+	if startAfterDate != 0 && startAfterID != "" {
+		iter = firestoreClient.Collection(firestoreCollection).
+			OrderBy("date", firestore.Desc).
+			OrderBy("id", firestore.Asc).
+			StartAfter(startAfterDate, startAfterID).
+			Limit(10).
+			Documents(ctx)
+	}
 
 	var res ListResponse
 	for {
@@ -195,6 +219,7 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err != nil {
+			fmt.Println(err.Error())
 			w.WriteHeader(500)
 			return
 		}

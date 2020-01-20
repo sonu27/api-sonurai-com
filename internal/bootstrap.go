@@ -91,8 +91,15 @@ func getWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	b, _ := cache.Get(id)
 	if len(b) > 0 {
+		etag := fmt.Sprintf("\"%x\"", md5.Sum(b))
 		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
-		w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
+		w.Header().Set("ETag", etag)
+
+		if r.Header.Get("If-None-Match") == etag {
+			w.WriteHeader(304)
+			return
+		}
+
 		w.Write(b)
 		return
 	}
@@ -100,7 +107,7 @@ func getWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if isNumeric(id) {
-		getByOldId(ctx, w, id)
+		getByOldId(ctx, w, r, id)
 		return
 	}
 
@@ -113,14 +120,14 @@ func getWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	if dsnap.Exists() {
 		data := dsnap.Data()
 
-		outputAndCache(w, id, data)
+		outputAndCache(w, r, id, data)
 		return
 	}
 
 	w.WriteHeader(404)
 }
 
-func getByOldId(ctx context.Context, w http.ResponseWriter, oldId string) {
+func getByOldId(ctx context.Context, w http.ResponseWriter, r *http.Request, oldId string) {
 	i, _ := strconv.Atoi(oldId)
 	iter := firestoreClient.Collection(firestoreCollection).Where("oldId", "==", i).Documents(ctx)
 
@@ -140,20 +147,25 @@ func getByOldId(ctx context.Context, w http.ResponseWriter, oldId string) {
 		return
 	}
 
-	outputAndCache(w, oldId, doc.Data())
-	return
-
+	outputAndCache(w, r, oldId, doc.Data())
 }
 
-func outputAndCache(w http.ResponseWriter, id string, data map[string]interface{}) {
+func outputAndCache(w http.ResponseWriter, r *http.Request, id string, data map[string]interface{}) {
 	var result Image
 	mapstructure.Decode(data, &result)
 	b, _ := json.Marshal(result)
-
-	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
-	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
-	w.Write(b)
 	cache.Set(id, b)
+
+	etag := fmt.Sprintf("\"%x\"", md5.Sum(b))
+	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
+	w.Header().Set("ETag", etag)
+
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(304)
+		return
+	}
+
+	w.Write(b)
 }
 
 func isNumeric(s string) bool {
@@ -193,9 +205,16 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(res)
+	etag := fmt.Sprintf("\"%x\"", md5.Sum(b))
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
-	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", md5.Sum(b)))
+	w.Header().Set("ETag", etag)
+
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(304)
+		return
+	}
+
 	w.Write(b)
 }
 

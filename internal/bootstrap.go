@@ -203,6 +203,11 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 		startAfterID = v
 	}
 
+	direction := "forward"
+	if v := r.URL.Query().Get("prev"); v != "" {
+		direction = "backward"
+	}
+
 	if startAfterDate != 0 && startAfterID != "" {
 		iter = firestoreClient.Collection(firestoreCollection).
 			OrderBy("date", firestore.Desc).
@@ -210,6 +215,15 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 			StartAfter(startAfterDate, startAfterID).
 			Limit(10).
 			Documents(ctx)
+
+		if direction == "backward" {
+			iter = firestoreClient.Collection(firestoreCollection).
+				OrderBy("date", firestore.Asc).
+				OrderBy("id", firestore.Desc).
+				StartAfter(startAfterDate, startAfterID).
+				Limit(10).
+				Documents(ctx)
+		}
 	}
 
 	var res ListResponse
@@ -227,6 +241,10 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 		var wallpaper ImageBasic
 		mapstructure.Decode(doc.Data(), &wallpaper)
 		res.Data = append(res.Data, wallpaper)
+	}
+
+	if direction == "backward" {
+		reverseImages(res.Data)
 	}
 
 	b, _ := json.Marshal(res)
@@ -277,4 +295,11 @@ func secondsExpiresIn() int {
 	}
 
 	return secondsExpiresIn
+}
+
+func reverseImages(a []ImageBasic) {
+	for i := len(a)/2 - 1; i >= 0; i-- {
+		opp := len(a) - 1 - i
+		a[i], a[opp] = a[opp], a[i]
+	}
 }

@@ -177,17 +177,9 @@ func listWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	iter := new(firestore.DocumentIterator)
 
-	offset := 0
-	if v := r.URL.Query().Get("offset"); v != "" {
-		if i, err := strconv.Atoi(v); err == nil {
-			offset = i
-		}
-	}
-
 	iter = firestoreClient.Collection(firestoreCollection).
 		OrderBy("date", firestore.Desc).
 		OrderBy("id", firestore.Asc).
-		Offset(offset).
 		Limit(10).
 		Documents(ctx)
 

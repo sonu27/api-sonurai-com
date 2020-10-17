@@ -2,18 +2,15 @@ package main
 
 import (
 	"api/internal"
-	"fmt"
-	"os"
+	"log"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
-	}
+	_ = godotenv.Load()
 
 	if err := internal.Bootstrap(); err != nil {
-		fmt.Fprint(os.Stderr, "Bootstrap error: "+err.Error())
+		log.Fatal("bootstrap error", err)
 	}
 }

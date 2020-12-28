@@ -1,31 +1,34 @@
 package internal
 
 import (
+	"api/internal/client"
+	"api/internal/service"
 	"context"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"github.com/allegro/bigcache"
 	"github.com/go-chi/chi"
 	"github.com/rs/cors"
 )
 
-var (
-	firestoreClient *firestore.Client
-	cache           *bigcache.BigCache
-)
+const collection = "BingWallpapers"
 
 func Bootstrap() (err error) {
 	ctx := context.Background()
-	if firestoreClient, err = GetFirestoreClient(ctx); err != nil {
+	firestoreClient, err := getFirestoreClient(ctx)
+	if err != nil {
 		return
 	}
-	if cache, err = bigcache.NewBigCache(bigcache.DefaultConfig(24 * time.Hour)); err != nil {
+	cache, err := bigcache.NewBigCache(bigcache.DefaultConfig(24 * time.Hour))
+	if err != nil {
 		return
 	}
+
+	wallpaperClient := client.NewClient(collection, firestoreClient)
+	svc := service.NewService(cache, wallpaperClient)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},
@@ -36,9 +39,9 @@ func Bootstrap() (err error) {
 	r := chi.NewRouter()
 	r.Use(c.Handler)
 	//r.Use(middleware.Logger)
-	r.Get("/wallpapers", listWallpapersHandler)
-	r.Get("/wallpapers/{id}", getWallpaperHandler)
-	r.Get("/wallpapers/{id:[\\d]+}", getWallpaperHandlerLegacy)
+	r.Get("/wallpapers", svc.ListWallpapersHandler)
+	r.Get("/wallpapers/{id}", svc.GetWallpaperHandler)
+	r.Get("/wallpapers/{id:[\\d]+}", svc.GetOldWallpaperHandler)
 
 	port := os.Getenv("PORT")
 	log.Printf("server started on port %s", port)

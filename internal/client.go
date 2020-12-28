@@ -10,11 +10,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-const (
-	firestoreCollection = "BingWallpapers"
-)
-
-func GetFirestoreClient(ctx context.Context) (*firestore.Client, error) {
+func getFirestoreClient(ctx context.Context) (*firestore.Client, error) {
 	saJSON, err := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
 	if err != nil {
 		return nil, err

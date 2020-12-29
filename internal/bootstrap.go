@@ -2,6 +2,7 @@ package internal
 
 import (
 	"api/internal/client"
+	"api/internal/server"
 	"api/internal/service"
 	"context"
 	"log"
@@ -18,7 +19,7 @@ const collection = "BingWallpapers"
 
 func Bootstrap() (err error) {
 	ctx := context.Background()
-	firestoreClient, err := getFirestoreClient(ctx)
+	firestoreClient, err := client.FirestoreClient(ctx)
 	if err != nil {
 		return
 	}
@@ -39,9 +40,11 @@ func Bootstrap() (err error) {
 	r := chi.NewRouter()
 	r.Use(c.Handler)
 	//r.Use(middleware.Logger)
-	r.Get("/wallpapers", svc.ListWallpapersHandler)
-	r.Get("/wallpapers/{id}", svc.GetWallpaperHandler)
-	r.Get("/wallpapers/{id:[\\d]+}", svc.GetOldWallpaperHandler)
+	r.Use(server.WrapResponseWriter)
+	r.Route("/wallpapers", func(r chi.Router) {
+		r.Get("/", svc.ListWallpapersHandler)
+		r.Get("/{id}", svc.GetWallpaperHandler)
+	})
 
 	port := os.Getenv("PORT")
 	log.Printf("server started on port %s", port)

@@ -1,4 +1,4 @@
-package internal
+package client
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-func getFirestoreClient(ctx context.Context) (*firestore.Client, error) {
+func FirestoreClient(ctx context.Context) (*firestore.Client, error) {
 	saJSON, err := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
 	if err != nil {
 		return nil, err

@@ -11,8 +11,8 @@ import (
 )
 
 type WallpaperClient interface {
-	Get(ctx context.Context, id string) (map[string]interface{}, error)
-	GetByOldID(ctx context.Context, id int) (map[string]interface{}, error)
+	Get(ctx context.Context, id string) (*model.Image, error)
+	GetByOldID(ctx context.Context, id int) (*model.Image, error)
 	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
 }
 
@@ -35,7 +35,7 @@ type ListQuery struct {
 	Reverse        bool
 }
 
-func (c *Client) Get(ctx context.Context, id string) (map[string]interface{}, error) {
+func (c *Client) Get(ctx context.Context, id string) (*model.Image, error) {
 	doc, err := c.firestore.Collection(c.collection).Doc(id).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -44,11 +44,13 @@ func (c *Client) Get(ctx context.Context, id string) (map[string]interface{}, er
 			return nil, err
 		}
 	}
+	image := new(model.Image)
+	_ = mapstructure.Decode(doc.Data(), image)
 
-	return doc.Data(), nil
+	return image, nil
 }
 
-func (c *Client) GetByOldID(ctx context.Context, id int) (map[string]interface{}, error) {
+func (c *Client) GetByOldID(ctx context.Context, id int) (*model.Image, error) {
 	iter := c.firestore.Collection(c.collection).Where("oldId", "==", id).Documents(ctx)
 
 	doc, err := iter.Next()
@@ -60,7 +62,10 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (map[string]interface{}
 		}
 	}
 
-	return doc.Data(), nil
+	image := new(model.Image)
+	_ = mapstructure.Decode(doc.Data(), image)
+
+	return image, nil
 }
 
 func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, error) {

@@ -5,6 +5,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"context"
 	"encoding/json"
+	"fmt"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,6 +15,7 @@ type WallpaperClient interface {
 	Get(ctx context.Context, id string) (*model.Image, error)
 	GetByOldID(ctx context.Context, id int) (*model.Image, error)
 	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
+	ListByTag(ctx context.Context, tag string) (*model.ListResponse, error)
 }
 
 func NewClient(collection string, firestore *firestore.Client) *Client {
@@ -105,6 +107,27 @@ func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, er
 
 	if q.Reverse {
 		reverseImages(res.Data)
+	}
+
+	return &res, nil
+}
+
+func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse, error) {
+	dsnap, err := c.firestore.Collection(c.collection).
+		Limit(25).
+		OrderBy(fmt.Sprintf("tags.%s", tag), firestore.Desc).
+		Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var res model.ListResponse
+	for _, v := range dsnap {
+		var wallpaper model.ImageBasic
+		if err := jsonToInterface(v.Data(), &wallpaper); err != nil {
+			return nil, err
+		}
+		res.Data = append(res.Data, wallpaper)
 	}
 
 	return &res, nil

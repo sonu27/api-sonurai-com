@@ -43,6 +43,7 @@ func Bootstrap() (err error) {
 	r.Use(server.WrapResponseWriter)
 	r.Route("/wallpapers", func(r chi.Router) {
 		r.Get("/", svc.ListWallpapersHandler)
+		r.Get("/tags/{tag}", svc.ListWallpapersByTagHandler)
 		r.Get("/{id}", svc.GetWallpaperHandler)
 	})
 

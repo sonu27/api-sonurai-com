@@ -4,7 +4,7 @@ import (
 	"api/internal/model"
 	"cloud.google.com/go/firestore"
 	"context"
-	"github.com/mitchellh/mapstructure"
+	"encoding/json"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,12 +40,14 @@ func (c *Client) Get(ctx context.Context, id string) (*model.Image, error) {
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			return nil, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
+
 	image := new(model.Image)
-	_ = mapstructure.Decode(doc.Data(), image)
+	if err := jsonToInterface(doc.Data(), &image); err != nil {
+		return nil, err
+	}
 
 	return image, nil
 }
@@ -57,13 +59,14 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.Image, error) {
 	if err != nil {
 		if status.Code(err) == codes.NotFound || err == iterator.Done {
 			return nil, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	image := new(model.Image)
-	_ = mapstructure.Decode(doc.Data(), image)
+	if err := jsonToInterface(doc.Data(), &image); err != nil {
+		return nil, err
+	}
 
 	return image, nil
 }
@@ -86,19 +89,17 @@ func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, er
 		query = query.StartAfter(q.StartAfterDate, q.StartAfterID)
 	}
 
-	iter := query.Documents(ctx)
+	dsnap, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
 	var res model.ListResponse
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
+	for _, v := range dsnap {
+		var wallpaper model.ImageBasic
+		if err := jsonToInterface(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
-
-		var wallpaper model.ImageBasic
-		mapstructure.Decode(doc.Data(), &wallpaper)
 		res.Data = append(res.Data, wallpaper)
 	}
 
@@ -107,6 +108,17 @@ func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, er
 	}
 
 	return &res, nil
+}
+
+func jsonToInterface(in map[string]interface{}, out interface{}) error {
+	b, err := json.Marshal(in)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(b, out); err != nil {
+		return err
+	}
+	return nil
 }
 
 func reverseImages(a []model.ImageBasic) {

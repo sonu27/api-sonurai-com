@@ -40,11 +40,13 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 		image, err = svc.client.GetByOldID(r.Context(), i)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	} else {
 		image, err = svc.client.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -85,6 +87,7 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 	data, err := svc.client.List(ctx, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	b, _ := json.Marshal(data)

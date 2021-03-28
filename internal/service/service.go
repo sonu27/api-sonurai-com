@@ -93,3 +93,22 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 	b, _ := json.Marshal(data)
 	_, _ = w.Write(b)
 }
+
+func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
+	tag := chi.URLParam(r, "tag")
+	ctx := r.Context()
+
+	data, err := svc.client.ListByTag(ctx, tag)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(data.Data) == 0 {
+		w.WriteHeader(404)
+		return
+	}
+
+	b, _ := json.Marshal(data)
+	_, _ = w.Write(b)
+}

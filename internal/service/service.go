@@ -64,7 +64,7 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	q := client.ListQuery{
-		Limit:          10,
+		Limit:          24,
 		StartAfterDate: 0,
 		StartAfterID:   "",
 		Reverse:        false,

@@ -90,6 +90,11 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if len(data.Data) == 0 {
+		w.WriteHeader(404)
+		return
+	}
+
 	b, _ := json.Marshal(data)
 	_, _ = w.Write(b)
 }

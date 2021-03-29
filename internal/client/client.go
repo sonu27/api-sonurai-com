@@ -114,7 +114,7 @@ func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, er
 
 func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse, error) {
 	dsnap, err := c.firestore.Collection(c.collection).
-		Limit(25).
+		Limit(36).
 		OrderBy(fmt.Sprintf("tags.%s", tag), firestore.Desc).
 		Documents(ctx).GetAll()
 	if err != nil {

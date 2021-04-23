@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"crypto/md5"
 	"fmt"
 	"net/http"
 	"time"
@@ -34,12 +33,6 @@ func (w *wrapperResponseWriter) Flush(ifNoneMatch string) (int64, error) {
 	if 200 <= w.statusCode && w.statusCode < 300 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
-	}
-	etag := fmt.Sprintf("\"%x\"", md5.Sum(w.buf.Bytes()))
-	w.Header().Set("ETag", etag)
-	if ifNoneMatch == etag {
-		w.WriteHeader(304)
-		w.buf.Reset()
 	}
 
 	return w.buf.WriteTo(w.ResponseWriter)

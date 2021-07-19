@@ -84,6 +84,13 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		q.Reverse = true
 	}
 
+	if v := r.URL.Query().Get("limit"); v != "" {
+		i, err := strconv.Atoi(v)
+		if err == nil && i > 0 && i < q.Limit {
+			q.Limit = i
+		}
+	}
+
 	data, err := svc.client.List(ctx, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

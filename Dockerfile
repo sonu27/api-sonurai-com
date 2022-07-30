@@ -1,15 +1,21 @@
 FROM golang:1-alpine as builder
-RUN apk add --no-cache git curl openssh ca-certificates
 
-ENV PROJECT_DIR /app
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=amd64
 
-COPY . $PROJECT_DIR
-WORKDIR $PROJECT_DIR
+WORKDIR /src
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ./cmd/app/main ./cmd/app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY ./ ./
 
-FROM scratch
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /app/cmd/app/main /app/
-WORKDIR /app
-CMD ["/app/main"]
+RUN go build -trimpath -mod=readonly -o /app ./cmd/app
+
+FROM gcr.io/distroless/static-debian11
+
+USER nonroot:nonroot
+
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
+CMD ["/app"]

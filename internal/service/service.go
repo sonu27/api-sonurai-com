@@ -1,12 +1,14 @@
 package service
 
 import (
-	"api/internal/client"
-	"api/internal/model"
 	"encoding/json"
-	"github.com/go-chi/chi"
 	"net/http"
 	"strconv"
+
+	"api/internal/client"
+	"api/internal/model"
+
+	"github.com/go-chi/chi"
 )
 
 type Cache interface {
@@ -35,7 +37,7 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	image := new(model.Image)
+	var image *model.Image
 	if i, err := strconv.Atoi(id); err == nil {
 		image, err = svc.client.GetByOldID(r.Context(), i)
 		if err != nil {

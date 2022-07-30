@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -37,27 +38,27 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var image *model.Image
+	var wallpaper *model.WallpaperWithTags
 	if i, err := strconv.Atoi(id); err == nil {
-		image, err = svc.client.GetByOldID(r.Context(), i)
+		wallpaper, err = svc.client.GetByOldID(r.Context(), i)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		image, err = svc.client.Get(r.Context(), id)
+		wallpaper, err = svc.client.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	if image == nil {
+	if wallpaper == nil {
 		w.WriteHeader(404)
 		return
 	}
 
-	b, _ = json.Marshal(*image)
+	b, _ = json.Marshal(*wallpaper)
 	_ = svc.cache.Set(id, b)
 	_, _ = w.Write(b)
 }
@@ -103,6 +104,12 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(404)
 		return
 	}
+
+	first := data.Data[0]
+	last := data.Data[len(data.Data)-1]
+
+	data.Links.Prev = fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s&prev=1", first.Date, first.ID)
+	data.Links.Next = fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)
 
 	b, _ := json.Marshal(data)
 	_, _ = w.Write(b)

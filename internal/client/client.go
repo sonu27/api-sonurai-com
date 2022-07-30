@@ -14,8 +14,8 @@ import (
 )
 
 type WallpaperClient interface {
-	Get(ctx context.Context, id string) (*model.Image, error)
-	GetByOldID(ctx context.Context, id int) (*model.Image, error)
+	Get(ctx context.Context, id string) (*model.WallpaperWithTags, error)
+	GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error)
 	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
 	ListByTag(ctx context.Context, tag string) (*model.ListResponse, error)
 }
@@ -39,7 +39,7 @@ type ListQuery struct {
 	Reverse        bool
 }
 
-func (c *Client) Get(ctx context.Context, id string) (*model.Image, error) {
+func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, error) {
 	doc, err := c.firestore.Collection(c.collection).Doc(id).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -48,15 +48,15 @@ func (c *Client) Get(ctx context.Context, id string) (*model.Image, error) {
 		return nil, err
 	}
 
-	image := new(model.Image)
-	if err := jsonToInterface(doc.Data(), &image); err != nil {
+	wallpaper := new(model.WallpaperWithTags)
+	if err := jsonToInterface(doc.Data(), &wallpaper); err != nil {
 		return nil, err
 	}
 
-	return image, nil
+	return wallpaper, nil
 }
 
-func (c *Client) GetByOldID(ctx context.Context, id int) (*model.Image, error) {
+func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error) {
 	iter := c.firestore.Collection(c.collection).Where("oldId", "==", id).Documents(ctx)
 
 	doc, err := iter.Next()
@@ -67,12 +67,12 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.Image, error) {
 		return nil, err
 	}
 
-	image := new(model.Image)
-	if err := jsonToInterface(doc.Data(), &image); err != nil {
+	wallpaper := new(model.WallpaperWithTags)
+	if err := jsonToInterface(doc.Data(), &wallpaper); err != nil {
 		return nil, err
 	}
 
-	return image, nil
+	return wallpaper, nil
 }
 
 func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, error) {
@@ -100,7 +100,7 @@ func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, er
 
 	var res model.ListResponse
 	for _, v := range dsnap {
-		var wallpaper model.ImageBasic
+		var wallpaper model.Wallpaper
 		if err := jsonToInterface(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, er
 	}
 
 	if q.Reverse {
-		reverseImages(res.Data)
+		reverse(res.Data)
 	}
 
 	return &res, nil
@@ -125,7 +125,7 @@ func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse
 
 	var res model.ListResponse
 	for _, v := range dsnap {
-		var wallpaper model.ImageBasic
+		var wallpaper model.Wallpaper
 		if err := jsonToInterface(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
@@ -146,7 +146,7 @@ func jsonToInterface(in map[string]any, out any) error {
 	return nil
 }
 
-func reverseImages(a []model.ImageBasic) {
+func reverse[T any](a []T) {
 	for i := len(a)/2 - 1; i >= 0; i-- {
 		opp := len(a) - 1 - i
 		a[i], a[opp] = a[opp], a[i]

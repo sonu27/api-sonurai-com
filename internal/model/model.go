@@ -2,7 +2,7 @@ package model
 
 type ListResponse struct {
 	Data  []Wallpaper `json:"data"`
-	Links Links       `json:"links,omitempty"`
+	Links *Links      `json:"links,omitempty"`
 }
 
 type Wallpaper struct {

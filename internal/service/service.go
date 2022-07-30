@@ -1,12 +1,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
-	"api/internal/client"
 	"api/internal/model"
 
 	"github.com/go-chi/chi"
@@ -17,7 +17,20 @@ type Cache interface {
 	Set(key string, entry []byte) error
 }
 
-func NewService(cache Cache, client client.WallpaperClient) *Service {
+type WallpaperClient interface {
+	Get(ctx context.Context, id string) (*model.WallpaperWithTags, error)
+	GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error)
+	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
+	ListByTag(ctx context.Context, tag string) (*model.ListResponse, error)
+}
+type ListQuery struct {
+	Limit          int
+	StartAfterDate int
+	StartAfterID   string
+	Reverse        bool
+}
+
+func NewService(cache Cache, client WallpaperClient) *Service {
 	return &Service{
 		cache:  cache,
 		client: client,
@@ -26,7 +39,7 @@ func NewService(cache Cache, client client.WallpaperClient) *Service {
 
 type Service struct {
 	cache  Cache
-	client client.WallpaperClient
+	client WallpaperClient
 }
 
 func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +77,7 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
-	q := client.ListQuery{Limit: 24}
+	q := ListQuery{Limit: 24}
 
 	if v := r.URL.Query().Get("startAfterDate"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {

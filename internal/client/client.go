@@ -6,19 +6,13 @@ import (
 	"fmt"
 
 	"api/internal/model"
+	"api/internal/service"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type WallpaperClient interface {
-	Get(ctx context.Context, id string) (*model.WallpaperWithTags, error)
-	GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error)
-	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
-	ListByTag(ctx context.Context, tag string) (*model.ListResponse, error)
-}
 
 func NewClient(collection string, firestore *firestore.Client) *Client {
 	return &Client{
@@ -30,13 +24,6 @@ func NewClient(collection string, firestore *firestore.Client) *Client {
 type Client struct {
 	collection string
 	firestore  *firestore.Client
-}
-
-type ListQuery struct {
-	Limit          int
-	StartAfterDate int
-	StartAfterID   string
-	Reverse        bool
 }
 
 func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, error) {
@@ -75,7 +62,7 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTa
 	return wallpaper, nil
 }
 
-func (c *Client) List(ctx context.Context, q ListQuery) (*model.ListResponse, error) {
+func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResponse, error) {
 	query := c.firestore.Collection(c.collection).Limit(q.Limit)
 
 	if q.Reverse {

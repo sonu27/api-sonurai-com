@@ -1,14 +1,15 @@
 package internal
 
 import (
-	"api/internal/client"
-	"api/internal/server"
-	"api/internal/service"
 	"context"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"api/internal/client"
+	"api/internal/server"
+	"api/internal/service"
 
 	"github.com/allegro/bigcache"
 	"github.com/go-chi/chi"

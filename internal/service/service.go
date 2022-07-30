@@ -64,14 +64,7 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	q := client.ListQuery{
-		Limit:          24,
-		StartAfterDate: 0,
-		StartAfterID:   "",
-		Reverse:        false,
-	}
+	q := client.ListQuery{Limit: 24}
 
 	if v := r.URL.Query().Get("startAfterDate"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
@@ -94,7 +87,7 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	data, err := svc.client.List(ctx, q)
+	data, err := svc.client.List(r.Context(), q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -117,9 +110,8 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 
 func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
 	tag := chi.URLParam(r, "tag")
-	ctx := r.Context()
 
-	data, err := svc.client.ListByTag(ctx, tag)
+	data, err := svc.client.ListByTag(r.Context(), tag)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -1,11 +1,13 @@
 package client
 
 import (
-	"api/internal/model"
-	"cloud.google.com/go/firestore"
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"api/internal/model"
+
+	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -133,7 +135,7 @@ func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse
 	return &res, nil
 }
 
-func jsonToInterface(in map[string]interface{}, out interface{}) error {
+func jsonToInterface(in map[string]any, out any) error {
 	b, err := json.Marshal(in)
 	if err != nil {
 		return err

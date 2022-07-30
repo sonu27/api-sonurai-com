@@ -1,8 +1,9 @@
 package main
 
 import (
-	"api/internal"
 	"log"
+
+	"api/internal"
 
 	"github.com/joho/godotenv"
 )

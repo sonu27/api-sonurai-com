@@ -23,6 +23,7 @@ type WallpaperClient interface {
 	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
 	ListByTag(ctx context.Context, tag string) (*model.ListResponse, error)
 }
+
 type ListQuery struct {
 	Limit          int
 	StartAfterDate int

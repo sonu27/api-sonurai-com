@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"api/internal/model"
 	"api/internal/service"
@@ -133,9 +134,8 @@ func jsonToInterface(in map[string]any, out any) error {
 	return nil
 }
 
-func reverse[T any](a []T) {
-	for i := len(a)/2 - 1; i >= 0; i-- {
-		opp := len(a) - 1 - i
-		a[i], a[opp] = a[opp], a[i]
-	}
+func reverse[T comparable](s []T) {
+	sort.SliceStable(s, func(i, j int) bool {
+		return i > j
+	})
 }

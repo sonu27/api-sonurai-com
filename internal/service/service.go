@@ -31,8 +31,8 @@ type ListQuery struct {
 	Reverse        bool
 }
 
-func NewService(cache Cache, client WallpaperClient) *Service {
-	return &Service{
+func NewService(cache Cache, client WallpaperClient) Service {
+	return Service{
 		cache:  cache,
 		client: client,
 	}
@@ -72,7 +72,7 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	b, _ = json.Marshal(*wallpaper)
+	b, _ = json.Marshal(wallpaper)
 	_ = svc.cache.Set(id, b)
 	_, _ = w.Write(b)
 }

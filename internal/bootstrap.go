@@ -30,7 +30,7 @@ func Bootstrap() (err error) {
 	}
 
 	wallpaperClient := client.NewClient(collection, firestoreClient)
-	svc := service.NewService(cache, wallpaperClient)
+	svc := service.NewService(cache, &wallpaperClient)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},

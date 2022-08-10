@@ -15,8 +15,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func NewClient(collection string, firestore *firestore.Client) *Client {
-	return &Client{
+func NewClient(collection string, firestore *firestore.Client) Client {
+	return Client{
 		collection: collection,
 		firestore:  firestore,
 	}
@@ -37,7 +37,7 @@ func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, 
 	}
 
 	wallpaper := new(model.WallpaperWithTags)
-	if err := jsonToInterface(doc.Data(), &wallpaper); err != nil {
+	if err := jsonToInterface(doc.Data(), wallpaper); err != nil {
 		return nil, err
 	}
 

@@ -9,27 +9,31 @@ import (
 
 func WrapResponseWriter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ww := NewWrapperResponseWriter(w)
+		ww := newResponseWriterWrapper(w)
 		next.ServeHTTP(ww, r)
 		_, _ = ww.Flush(r.Header.Get("If-None-Match"))
 	})
 }
 
-type wrapperResponseWriter struct {
+type responseWriterWrapper struct {
 	http.ResponseWriter
 	buf        *bytes.Buffer
 	statusCode int
 }
 
-func NewWrapperResponseWriter(w http.ResponseWriter) *wrapperResponseWriter {
-	return &wrapperResponseWriter{w, new(bytes.Buffer), http.StatusOK}
+func newResponseWriterWrapper(w http.ResponseWriter) *responseWriterWrapper {
+	return &responseWriterWrapper{
+		ResponseWriter: w,
+		buf:            new(bytes.Buffer),
+		statusCode:     http.StatusOK,
+	}
 }
 
-func (w *wrapperResponseWriter) Write(b []byte) (int, error) {
+func (w *responseWriterWrapper) Write(b []byte) (int, error) {
 	return w.buf.Write(b)
 }
 
-func (w *wrapperResponseWriter) Flush(ifNoneMatch string) (int64, error) {
+func (w *responseWriterWrapper) Flush(ifNoneMatch string) (int64, error) {
 	if 200 <= w.statusCode && w.statusCode < 300 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", secondsExpiresIn()))
@@ -38,7 +42,7 @@ func (w *wrapperResponseWriter) Flush(ifNoneMatch string) (int64, error) {
 	return w.buf.WriteTo(w.ResponseWriter)
 }
 
-func (w *wrapperResponseWriter) WriteHeader(code int) {
+func (w *responseWriterWrapper) WriteHeader(code int) {
 	w.statusCode = code
 	w.ResponseWriter.WriteHeader(code)
 }

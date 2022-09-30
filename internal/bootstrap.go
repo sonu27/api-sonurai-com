@@ -57,7 +57,7 @@ func Bootstrap() (err error) {
 		r.Get("/{id}", svc.GetWallpaperHandler)
 	})
 
-	go update.New(firebase, firestore)
+	go update.New(false, firebase, firestore)
 
 	port := os.Getenv("PORT")
 	log.Printf("server started on port %s", port)

@@ -39,18 +39,18 @@ var (
 	translateClient *translate.Client
 
 	ENMarkets = []string{
-		"en-gb",
-		"en-us",
-		"en-ca",
-		"en-au",
-		"en-nz",
+		"en-GB",
+		"en-US",
+		"en-CA",
+		"en-AU",
+		"en-NZ",
 	}
 
 	nonENMarkets = []string{
-		"fr-fr",
-		"de-de",
-		"es-es",
-		"zh-cn",
+		"fr-FR",
+		"de-DE",
+		"es-ES",
+		"zh-CN",
 		"ja-JP",
 	}
 )
@@ -59,7 +59,7 @@ type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
-func New(firebase *firebase.App, firestore *firestore.Client) error {
+func New(test bool, firebase *firebase.App, firestore *firestore.Client) error {
 	ctx := context.Background()
 	firestoreClient = firestore
 
@@ -91,6 +91,10 @@ func New(firebase *firebase.App, firestore *firestore.Client) error {
 	translateClient, err = translate.NewClient(ctx, sa)
 	if err != nil {
 		return err
+	}
+
+	if test {
+		return Start(ctx, bucket)
 	}
 
 	pubsubClient, err := pubsub.NewClient(ctx, projectID, sa)
@@ -170,7 +174,10 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 
 		var wallpaper map[string]interface{}
 		inrec, _ := json.Marshal(v)
-		json.Unmarshal(inrec, &wallpaper)
+		err = json.Unmarshal(inrec, &wallpaper)
+		if err != nil {
+			return err
+		}
 
 		_, err = updateWallpaper(ctx, v.ID, wallpaper)
 		if err != nil {
@@ -180,7 +187,7 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 
 		// add extras info e.g. labels
 		if !dsnap.Exists() {
-			err, anno := detectLabels(v.ThumbURL)
+			anno, err := detectLabels(v.ThumbURL)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
@@ -251,7 +258,10 @@ func addWallpapers(markets []string, wallpapers map[string]Image) error {
 }
 
 func getData(market string) (*BingWallpapers, error) {
-	resp, _ := http.Get("https://www.bing.com/HPImageArchive.aspx?format=js&n=10&mbl=1&mkt=" + market)
+	resp, err := http.Get("https://www.bing.com/HPImageArchive.aspx?format=js&n=10&mbl=1&mkt=" + market)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	bw := new(BingWallpapers)
@@ -335,13 +345,19 @@ func fileExists(url string) bool {
 }
 
 func downloadFile(ctx context.Context, bucket *storage.BucketHandle, url string, name string) {
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	client := http.DefaultClient
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	defer resp.Body.Close()
 	objWriter := bucket.Object(name).NewWriter(ctx)
 
-	_, err := io.Copy(objWriter, resp.Body)
+	_, err = io.Copy(objWriter, resp.Body)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -352,24 +368,27 @@ func updateWallpaper(ctx context.Context, ID string, data map[string]interface{}
 	return firestoreClient.Collection(firestoreCollection).Doc(ID).Set(ctx, data, firestore.MergeAll)
 }
 
-func detectLabels(url string) (error, []*vision2.EntityAnnotation) {
+func detectLabels(url string) ([]*vision2.EntityAnnotation, error) {
 	ctx := context.Background()
 
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	client := http.DefaultClient
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	image, err := vision.NewImageFromReader(resp.Body)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	annotations, err := annoClient.DetectLabels(ctx, image, nil, 50)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
-	return nil, annotations
+	return annotations, nil
 }
 
 func stringInSlice(a string, list []string) bool {

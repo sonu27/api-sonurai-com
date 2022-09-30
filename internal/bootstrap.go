@@ -10,7 +10,7 @@ import (
 	"api/internal/client"
 	"api/internal/server"
 	"api/internal/service"
-	"api/internal/update"
+	"api/internal/updater"
 
 	"github.com/allegro/bigcache"
 	"github.com/go-chi/chi"
@@ -57,7 +57,7 @@ func Bootstrap() (err error) {
 		r.Get("/{id}", svc.GetWallpaperHandler)
 	})
 
-	go update.New(false, firebase, firestore)
+	go updater.New(false, firebase, firestore)
 
 	port := os.Getenv("PORT")
 	log.Printf("server started on port %s", port)

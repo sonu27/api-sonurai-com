@@ -1,4 +1,4 @@
-package update
+package updater
 
 import (
 	"context"
@@ -10,6 +10,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
+
+	"api/internal/updater/bing_image"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
@@ -34,6 +37,7 @@ const (
 )
 
 var (
+	imageClient     *bing_image.Client
 	annoClient      *vision.ImageAnnotatorClient
 	firestoreClient *firestore.Client
 	translateClient *translate.Client
@@ -61,6 +65,10 @@ type PubSubMessage struct {
 
 func New(test bool, firebase *firebase.App, firestore *firestore.Client) error {
 	ctx := context.Background()
+
+	httpClient := &http.Client{Timeout: time.Second * 5}
+	imageClient = &bing_image.Client{HC: httpClient}
+
 	firestoreClient = firestore
 
 	storageClient, err := firebase.Storage(ctx)
@@ -130,10 +138,10 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 
 	// fetch and add wallpapers to the map if they do not exist
 	wallpapers := make(map[string]Image)
-	if err := addWallpapers(ENMarkets, wallpapers); err != nil {
+	if err := fetchImages(ctx, ENMarkets, wallpapers); err != nil {
 		return err
 	}
-	if err := addWallpapers(nonENMarkets, wallpapers); err != nil {
+	if err := fetchImages(ctx, nonENMarkets, wallpapers); err != nil {
 		return err
 	}
 
@@ -213,17 +221,6 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 	return nil
 }
 
-type BingWallpapers struct {
-	Images []BingImage `json:"images"`
-}
-
-type BingImage struct {
-	StartDate string `json:"startdate"`
-	Copyright string `json:"copyright"`
-	URLBase   string `json:"urlbase"`
-	URL       string `json:"url"`
-}
-
 type Image struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`
@@ -236,43 +233,28 @@ type Image struct {
 	ThumbURL  string `json:"thumbUrl"`
 }
 
-func addWallpapers(markets []string, wallpapers map[string]Image) error {
+func fetchImages(ctx context.Context, markets []string, images map[string]Image) error {
 	for _, market := range markets {
-		bw, err := getData(market)
+		bw, err := imageClient.List(ctx, market)
 		if err != nil {
 			return err
 		}
 
-		for _, v := range bw.Images {
-			image, err := convertToImage(v, market)
+		for _, v := range bw {
+			image, err := convertToImage(&v, market)
 			if err != nil {
 				return err
 			}
 
-			if _, exists := wallpapers[image.ID]; !exists {
-				wallpapers[image.ID] = *image
+			if _, exists := images[image.ID]; !exists {
+				images[image.ID] = *image
 			}
 		}
 	}
 	return nil
 }
 
-func getData(market string) (*BingWallpapers, error) {
-	resp, err := http.Get("https://www.bing.com/HPImageArchive.aspx?format=js&n=10&mbl=1&mkt=" + market)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bw := new(BingWallpapers)
-	if err := json.NewDecoder(resp.Body).Decode(bw); err != nil {
-		return nil, err
-	}
-
-	return bw, nil
-}
-
-func convertToImage(bw BingImage, market string) (*Image, error) {
+func convertToImage(bw *bing_image.Image, market string) (*Image, error) {
 	fullDesc := bw.Copyright
 	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
 	filename := strings.Replace(id, "/th?id=OHR.", "", 1)

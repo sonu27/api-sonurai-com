@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"api/internal/client"
-	"api/internal/update"
+	"api/internal/updater"
 
 	"github.com/joho/godotenv"
 )
@@ -31,5 +31,5 @@ func Bootstrap() (err error) {
 		return err
 	}
 
-	return update.New(true, firebase, firestore)
+	return updater.New(true, firebase, firestore)
 }

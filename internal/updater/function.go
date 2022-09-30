@@ -23,7 +23,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
-	vision2 "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	visionP "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -348,7 +348,7 @@ func updateWallpaper(ctx context.Context, ID string, data map[string]interface{}
 	return firestoreClient.Collection(firestoreCollection).Doc(ID).Set(ctx, data, firestore.MergeAll)
 }
 
-func detectLabels(ctx context.Context, url string) ([]*vision2.EntityAnnotation, error) {
+func detectLabels(ctx context.Context, url string) ([]*visionP.EntityAnnotation, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	resp, err := httpClient.Do(req)
 	if err != nil {

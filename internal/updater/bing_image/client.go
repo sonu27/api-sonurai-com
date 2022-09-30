@@ -8,6 +8,21 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+type ListResponse struct {
+	Market struct {
+		Market string `json:"mkt"`
+	} `json:"market"`
+	Images []Image `json:"images"`
+}
+
+type Image struct {
+	Copyright string `json:"copyright"`
+	StartDate string `json:"startdate"`
+	URL       string `json:"url"`
+	URLBase   string `json:"urlbase"`
+	WP        bool   `json:"wp"`
+}
+
 type Client struct {
 	HC *http.Client
 }
@@ -25,23 +40,8 @@ func (c *Client) List(ctx context.Context, market string) ([]Image, error) {
 	}
 
 	if market != lr.Market.Market {
-		log.Warningf(ctx, "markets mismatch: %s, %s", market, lr.Market.Market)
+		log.Warningf(ctx, "market mismatch: %s, %s", market, lr.Market.Market)
 	}
 
 	return lr.Images, nil
-}
-
-type ListResponse struct {
-	Market struct {
-		Market string `json:"mkt"`
-	} `json:"market"`
-	Images []Image `json:"images"`
-}
-
-type Image struct {
-	Copyright string `json:"copyright"`
-	StartDate string `json:"startdate"`
-	URL       string `json:"url"`
-	URLBase   string `json:"urlbase"`
-	WP        bool   `json:"wp"`
 }

@@ -37,6 +37,7 @@ const (
 )
 
 var (
+	httpClient      *http.Client
 	imageClient     *bing_image.Client
 	annoClient      *vision.ImageAnnotatorClient
 	firestoreClient *firestore.Client
@@ -59,6 +60,18 @@ var (
 	}
 )
 
+type Image struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Copyright string `json:"copyright"`
+	Date      int    `json:"date"`
+	Filename  string `json:"filename"`
+	Market    string `json:"market"`
+	FullDesc  string `json:"fullDesc"`
+	URL       string `json:"url"`
+	ThumbURL  string `json:"thumbUrl"`
+}
+
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
@@ -66,7 +79,7 @@ type PubSubMessage struct {
 func New(test bool, firebase *firebase.App, firestore *firestore.Client) error {
 	ctx := context.Background()
 
-	httpClient := &http.Client{Timeout: time.Second * 5}
+	httpClient = &http.Client{Timeout: time.Second * 5}
 	imageClient = &bing_image.Client{HC: httpClient}
 
 	firestoreClient = firestore
@@ -134,20 +147,19 @@ func New(test bool, firebase *firebase.App, firestore *firestore.Client) error {
 }
 
 func Start(ctx context.Context, bucket *storage.BucketHandle) error {
-	var updatedWallpapers []string
+	var updatedImages []string
+	images := make(map[string]Image)
 
-	// fetch and add wallpapers to the map if they do not exist
-	wallpapers := make(map[string]Image)
-	if err := fetchImages(ctx, ENMarkets, wallpapers); err != nil {
+	if err := fetchAndDeduplicateImages(ctx, ENMarkets, images); err != nil {
 		return err
 	}
-	if err := fetchImages(ctx, nonENMarkets, wallpapers); err != nil {
+	if err := fetchAndDeduplicateImages(ctx, nonENMarkets, images); err != nil {
 		return err
 	}
 
 	// for each wallpaper, check if exists in db
-	fmt.Printf("%d wallpapers found\n", len(wallpapers))
-	for _, v := range wallpapers {
+	fmt.Printf("%d images found\n", len(images))
+	for _, v := range images {
 		if !fileExists(v.URL) {
 			continue
 		}
@@ -172,7 +184,7 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 		downloadFile(ctx, bucket, v.URL, v.Filename+".jpg")
 
 		if stringInSlice(v.Market, nonENMarkets) {
-			translatedTitle, err := translateText(context.Background(), v.Title)
+			translatedTitle, err := translateText(ctx, v.Title)
 			if err != nil {
 				return err
 			} else if translatedTitle != "" {
@@ -191,11 +203,11 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 		if err != nil {
 			return err
 		}
-		updatedWallpapers = append(updatedWallpapers, v.ID)
+		updatedImages = append(updatedImages, v.ID)
 
 		// add extras info e.g. labels
 		if !dsnap.Exists() {
-			anno, err := detectLabels(v.ThumbURL)
+			anno, err := detectLabels(ctx, v.ThumbURL)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
@@ -216,45 +228,33 @@ func Start(ctx context.Context, bucket *storage.BucketHandle) error {
 		}
 	}
 
-	fmt.Printf("%d updated wallpapers %s\n", len(updatedWallpapers), strings.Join(updatedWallpapers, ", "))
+	fmt.Printf("%d updated images %s\n", len(updatedImages), strings.Join(updatedImages, ", "))
 
 	return nil
 }
 
-type Image struct {
-	ID        string `json:"id"`
-	Title     string `json:"title"`
-	Copyright string `json:"copyright"`
-	Date      int    `json:"date"`
-	Filename  string `json:"filename"`
-	Market    string `json:"market"`
-	FullDesc  string `json:"fullDesc"`
-	URL       string `json:"url"`
-	ThumbURL  string `json:"thumbUrl"`
-}
-
-func fetchImages(ctx context.Context, markets []string, images map[string]Image) error {
+func fetchAndDeduplicateImages(ctx context.Context, markets []string, out map[string]Image) error {
 	for _, market := range markets {
-		bw, err := imageClient.List(ctx, market)
+		bi, err := imageClient.List(ctx, market)
 		if err != nil {
 			return err
 		}
 
-		for _, v := range bw {
-			image, err := convertToImage(&v, market)
+		for _, v := range bi {
+			image, err := convertToImage(v, market)
 			if err != nil {
 				return err
 			}
 
-			if _, exists := images[image.ID]; !exists {
-				images[image.ID] = *image
+			if _, ok := out[image.ID]; !ok {
+				out[image.ID] = image
 			}
 		}
 	}
 	return nil
 }
 
-func convertToImage(bw *bing_image.Image, market string) (*Image, error) {
+func convertToImage(bw bing_image.Image, market string) (Image, error) {
 	fullDesc := bw.Copyright
 	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
 	filename := strings.Replace(id, "/th?id=OHR.", "", 1)
@@ -262,7 +262,7 @@ func convertToImage(bw *bing_image.Image, market string) (*Image, error) {
 
 	date, err := strconv.Atoi(bw.StartDate)
 	if err != nil {
-		return nil, err
+		return Image{}, err
 	}
 
 	var copyright string
@@ -287,7 +287,7 @@ func convertToImage(bw *bing_image.Image, market string) (*Image, error) {
 	title = strings.TrimSpace(title)
 	copyright = strings.TrimSpace(copyright)
 
-	image := &Image{
+	image := Image{
 		ID:        id,
 		Title:     title,
 		Copyright: copyright,
@@ -320,8 +320,7 @@ func translateText(ctx context.Context, text string) (string, error) {
 
 func fileExists(url string) bool {
 	req, _ := http.NewRequest(http.MethodHead, url, nil)
-	client := http.DefaultClient
-	resp, _ := client.Do(req)
+	resp, _ := httpClient.Do(req)
 
 	return resp.StatusCode == 200
 }
@@ -331,8 +330,7 @@ func downloadFile(ctx context.Context, bucket *storage.BucketHandle, url string,
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	client := http.DefaultClient
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -350,12 +348,9 @@ func updateWallpaper(ctx context.Context, ID string, data map[string]interface{}
 	return firestoreClient.Collection(firestoreCollection).Doc(ID).Set(ctx, data, firestore.MergeAll)
 }
 
-func detectLabels(url string) ([]*vision2.EntityAnnotation, error) {
-	ctx := context.Background()
-
+func detectLabels(ctx context.Context, url string) ([]*vision2.EntityAnnotation, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
-	client := http.DefaultClient
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

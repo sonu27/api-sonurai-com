@@ -1,11 +1,7 @@
 package main
 
 import (
-	"context"
 	"log"
-
-	"api/internal/client"
-	"api/internal/updater"
 
 	"github.com/joho/godotenv"
 )
@@ -19,17 +15,18 @@ func main() {
 }
 
 func Bootstrap() (err error) {
-	ctx := context.Background()
+	return nil
+	//ctx := context.Background()
 
-	firebase, err := client.Firebase(ctx)
-	if err != nil {
-		return err
-	}
+	//firebase, err := client.Firebase(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//firestore, err := firebase.Firestore(ctx)
+	//if err != nil {
+	//	return err
+	//}
 
-	firestore, err := firebase.Firestore(ctx)
-	if err != nil {
-		return err
-	}
-
-	return updater.New(true, firebase, firestore)
+	//return updater.New(true, firebase, firestore)
 }

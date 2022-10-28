@@ -12,6 +12,6 @@ func main() {
 	_ = godotenv.Load()
 
 	if err := internal.Bootstrap(); err != nil {
-		log.Fatal("bootstrap error", err)
+		log.Fatal("bootstrap error: ", err)
 	}
 }

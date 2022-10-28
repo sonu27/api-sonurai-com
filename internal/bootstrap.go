@@ -2,9 +2,13 @@ package internal
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"api/internal/client"
@@ -12,22 +16,30 @@ import (
 	"api/internal/service"
 	"api/internal/updater"
 
+	firebase "firebase.google.com/go"
 	"github.com/allegro/bigcache"
 	"github.com/go-chi/chi"
 	rscors "github.com/rs/cors"
+	"google.golang.org/api/option"
 )
 
 const collection = "BingWallpapers"
 
-func Bootstrap() (err error) {
+func Bootstrap() error {
 	ctx := context.Background()
 
-	firebase, err := client.Firebase(ctx)
+	saJSON, err := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
+	if err != nil {
+		return err
+	}
+	sa := option.WithCredentialsJSON(saJSON)
+
+	firebaseClient, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		return err
 	}
 
-	firestore, err := firebase.Firestore(ctx)
+	firestore, err := firebaseClient.Firestore(ctx)
 	if err != nil {
 		return err
 	}
@@ -57,11 +69,37 @@ func Bootstrap() (err error) {
 		r.Get("/{id}", svc.GetWallpaperHandler)
 	})
 
-	go updater.New(false, firebase, firestore)
+	u, err := updater.New(ctx, sa)
+	if err != nil {
+		return err
+	}
 
-	port := os.Getenv("PORT")
-	log.Printf("server started on port %s", port)
-	err = http.ListenAndServe(":"+port, r)
+	errs := make(chan error, 1)
+	go func() {
+		err := u.Start(ctx, sa)
+		if err != nil {
+			errs <- err
+		}
+		close(errs)
+	}()
 
-	return
+	go func() {
+		port := os.Getenv("PORT")
+		log.Printf("server started on http://localhost:%s", port)
+		err := http.ListenAndServe(":"+port, r)
+		if err != nil {
+			errs <- err
+		}
+		close(errs)
+	}()
+
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-errs:
+		return err
+	case <-exit:
+		return fmt.Errorf("sigterm received")
+	}
 }

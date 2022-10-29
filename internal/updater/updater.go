@@ -52,7 +52,7 @@ var (
 )
 
 func New(ctx context.Context, sa option.ClientOption) (*Updater, error) {
-	httpClient := &http.Client{Timeout: time.Second * 5}
+	httpClient := &http.Client{Timeout: time.Second * 15}
 
 	imageClient := &bing_image.Client{HC: httpClient}
 

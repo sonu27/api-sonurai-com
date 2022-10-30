@@ -45,7 +45,7 @@ func Bootstrap() error {
 		return err
 	}
 
-	cache, err := bigcache.NewBigCache(bigcache.DefaultConfig(time.Hour * 24))
+	cache, err := bigcache.NewBigCache(bigcache.DefaultConfig(time.Minute * 10))
 	if err != nil {
 		return err
 	}

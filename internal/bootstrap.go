@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -92,20 +91,6 @@ func Bootstrap() error {
 			errs <- err
 		}
 		close(errs)
-	}()
-
-	go func() {
-		stats := struct {
-			bigcache.Stats
-			Entries int `json:"entries"`
-		}{}
-		for range time.Tick(time.Minute) {
-			stats.Stats = cache.Stats()
-			stats.Entries = cache.Len()
-			if b, err := json.Marshal(stats); err == nil {
-				fmt.Println(string(b))
-			}
-		}
 	}()
 
 	exit := make(chan os.Signal, 1)

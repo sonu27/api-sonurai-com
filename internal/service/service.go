@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"api/internal/model"
 
@@ -45,9 +46,9 @@ type Service struct {
 
 func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	cacheKey := "id_" + id
 
-	b, _ := svc.cache.Get(id)
-	if len(b) > 0 {
+	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
 		_, _ = w.Write(b)
 		return
 	}
@@ -72,8 +73,8 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	b, _ = json.Marshal(wallpaper)
-	_ = svc.cache.Set(id, b)
+	b, _ := json.Marshal(wallpaper)
+	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)
 }
 
@@ -101,6 +102,20 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	var sb strings.Builder
+	sb.WriteString(string(rune(q.Limit)))
+	sb.WriteString(q.StartAfterID)
+	sb.WriteString(string(rune(q.StartAfterDate)))
+	if q.Reverse {
+		sb.WriteString("reverse")
+	}
+	cacheKey := sb.String()
+
+	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
+		_, _ = w.Write(b)
+		return
+	}
+
 	data, err := svc.client.List(r.Context(), q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -121,11 +136,18 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	b, _ := json.Marshal(data)
+	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)
 }
 
 func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
 	tag := chi.URLParam(r, "tag")
+	cacheKey := "tag_" + tag
+
+	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
+		_, _ = w.Write(b)
+		return
+	}
 
 	data, err := svc.client.ListByTag(r.Context(), tag)
 	if err != nil {
@@ -139,5 +161,6 @@ func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	b, _ := json.Marshal(data)
+	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)
 }

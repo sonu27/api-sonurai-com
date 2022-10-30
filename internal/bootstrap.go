@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"api/internal/client"
-	"api/internal/server"
+	"api/internal/middleware"
 	"api/internal/service"
 	"api/internal/updater"
 
@@ -61,9 +61,11 @@ func Bootstrap() error {
 
 	r := chi.NewRouter()
 	r.Use(cors.Handler)
-	//r.Use(middleware.Logger)
-	r.Use(server.WrapResponseWriter)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(""))
+	})
 	r.Route("/wallpapers", func(r chi.Router) {
+		r.Use(middleware.JSONHeaders)
 		r.Get("/", svc.ListWallpapersHandler)
 		r.Get("/tags/{tag}", svc.ListWallpapersByTagHandler)
 		r.Get("/{id}", svc.GetWallpaperHandler)

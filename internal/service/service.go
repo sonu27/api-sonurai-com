@@ -127,14 +127,6 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	first := data.Data[0]
-	last := data.Data[len(data.Data)-1]
-
-	data.Links = &model.Links{
-		Prev: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s&prev=1", first.Date, first.ID),
-		Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID),
-	}
-
 	b, _ := json.Marshal(data)
 	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)

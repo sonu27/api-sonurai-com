@@ -37,7 +37,7 @@ func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, 
 	}
 
 	wallpaper := new(model.WallpaperWithTags)
-	if err := jsonToInterface(doc.Data(), wallpaper); err != nil {
+	if err := jsonToAny(doc.Data(), wallpaper); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTa
 	}
 
 	wallpaper := new(model.WallpaperWithTags)
-	if err := jsonToInterface(doc.Data(), &wallpaper); err != nil {
+	if err := jsonToAny(doc.Data(), &wallpaper); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResp
 	var res model.ListResponse
 	for _, v := range dsnap {
 		var wallpaper model.Wallpaper
-		if err := jsonToInterface(v.Data(), &wallpaper); err != nil {
+		if err := jsonToAny(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
 		res.Data = append(res.Data, wallpaper)
@@ -114,7 +114,7 @@ func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse
 	var res model.ListResponse
 	for _, v := range dsnap {
 		var wallpaper model.Wallpaper
-		if err := jsonToInterface(v.Data(), &wallpaper); err != nil {
+		if err := jsonToAny(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
 		res.Data = append(res.Data, wallpaper)
@@ -123,7 +123,7 @@ func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse
 	return &res, nil
 }
 
-func jsonToInterface(in map[string]any, out any) error {
+func jsonToAny(in map[string]any, out any) error {
 	b, err := json.Marshal(in)
 	if err != nil {
 		return err

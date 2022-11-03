@@ -113,8 +113,9 @@ func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResp
 	return &res, nil
 }
 
-func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse, error) {
+func (c *Client) ListByTag(ctx context.Context, tag string, after float64) (*model.ListResponse, error) {
 	dsnap, err := c.firestore.Collection(c.collection).
+		Where(fmt.Sprintf("tags.%s", tag), "<", after).
 		Limit(36).
 		OrderBy(fmt.Sprintf("tags.%s", tag), firestore.Desc).
 		Documents(ctx).GetAll()
@@ -129,6 +130,11 @@ func (c *Client) ListByTag(ctx context.Context, tag string) (*model.ListResponse
 			return nil, err
 		}
 		res.Data = append(res.Data, wallpaper)
+	}
+
+	next := dsnap[len(dsnap)-1].Data()["tags"].(map[string]any)[tag].(float64)
+	res.Links = &model.Links{
+		Next: fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", tag, next),
 	}
 
 	return &res, nil

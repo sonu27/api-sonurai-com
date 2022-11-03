@@ -22,7 +22,7 @@ type WallpaperClient interface {
 	Get(ctx context.Context, id string) (*model.WallpaperWithTags, error)
 	GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error)
 	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
-	ListByTag(ctx context.Context, tag string) (*model.ListResponse, error)
+	ListByTag(ctx context.Context, tag string, after float64) (*model.ListResponse, error)
 }
 
 type ListQuery struct {
@@ -134,14 +134,22 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 
 func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
 	tag := chi.URLParam(r, "tag")
-	cacheKey := "tag_" + tag
+	var after float64 = 1
+
+	if v := r.URL.Query().Get("after"); v != "" {
+		if i, err := strconv.ParseFloat(v, 64); err == nil {
+			after = i
+		}
+	}
+
+	cacheKey := fmt.Sprintf("tag_%s_%.16f", tag, after)
 
 	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
 		_, _ = w.Write(b)
 		return
 	}
 
-	data, err := svc.client.ListByTag(r.Context(), tag)
+	data, err := svc.client.ListByTag(r.Context(), tag, after)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

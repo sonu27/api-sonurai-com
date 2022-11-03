@@ -64,6 +64,7 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTa
 }
 
 func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResponse, error) {
+	showPrev := false
 	query := c.firestore.Collection(c.collection).Limit(q.Limit)
 
 	if q.Reverse {
@@ -78,6 +79,7 @@ func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResp
 	}
 
 	if q.StartAfterDate != 0 && q.StartAfterID != "" {
+		showPrev = true
 		query = query.StartAfter(q.StartAfterDate, q.StartAfterID)
 	}
 
@@ -97,6 +99,15 @@ func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResp
 
 	if q.Reverse {
 		reverse(res.Data)
+	}
+
+	first := res.Data[0]
+	last := res.Data[len(res.Data)-1]
+
+	res.Links = &model.Links{Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)}
+
+	if showPrev {
+		res.Links.Prev = fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s&prev=1", first.Date, first.ID)
 	}
 
 	return &res, nil

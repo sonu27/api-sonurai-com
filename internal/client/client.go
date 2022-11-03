@@ -101,13 +101,14 @@ func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResp
 		reverse(res.Data)
 	}
 
-	first := res.Data[0]
-	last := res.Data[len(res.Data)-1]
+	if len(res.Data) > 0 {
+		last := res.Data[len(res.Data)-1]
+		res.Links = &model.Links{Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)}
 
-	res.Links = &model.Links{Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)}
-
-	if showPrev {
-		res.Links.Prev = fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s&prev=1", first.Date, first.ID)
+		if showPrev {
+			first := res.Data[0]
+			res.Links.Prev = fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s&prev=1", first.Date, first.ID)
+		}
 	}
 
 	return &res, nil
@@ -132,9 +133,9 @@ func (c *Client) ListByTag(ctx context.Context, tag string, after float64) (*mod
 		res.Data = append(res.Data, wallpaper)
 	}
 
-	next := dsnap[len(dsnap)-1].Data()["tags"].(map[string]any)[tag].(float64)
-	res.Links = &model.Links{
-		Next: fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", tag, next),
+	if len(res.Data) > 0 {
+		next := dsnap[len(dsnap)-1].Data()["tags"].(map[string]any)[tag].(float64)
+		res.Links = &model.Links{Next: fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", tag, next)}
 	}
 
 	return &res, nil

@@ -9,7 +9,6 @@ require (
 	cloud.google.com/go/translate v1.2.0
 	cloud.google.com/go/vision v1.2.0
 	firebase.google.com/go v3.13.0+incompatible
-	github.com/allegro/bigcache v1.2.1
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/joho/godotenv v1.4.0
 	github.com/rs/cors v1.8.2
@@ -24,7 +23,6 @@ require (
 	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/compute v1.10.0 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect

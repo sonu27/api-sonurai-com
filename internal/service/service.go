@@ -3,20 +3,13 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"api/internal/model"
 
 	"github.com/go-chi/chi"
 )
-
-type Cache interface {
-	Get(key string) ([]byte, error)
-	Set(key string, entry []byte) error
-}
 
 type WallpaperClient interface {
 	Get(ctx context.Context, id string) (*model.WallpaperWithTags, error)
@@ -32,26 +25,18 @@ type ListQuery struct {
 	Reverse        bool
 }
 
-func NewService(cache Cache, client WallpaperClient) Service {
+func NewService(client WallpaperClient) Service {
 	return Service{
-		cache:  cache,
 		client: client,
 	}
 }
 
 type Service struct {
-	cache  Cache
 	client WallpaperClient
 }
 
 func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	cacheKey := "id_" + id
-
-	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
-		_, _ = w.Write(b)
-		return
-	}
 
 	var wallpaper *model.WallpaperWithTags
 	if i, err := strconv.Atoi(id); err == nil {
@@ -74,7 +59,6 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	b, _ := json.Marshal(wallpaper)
-	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)
 }
 
@@ -102,20 +86,6 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	var sb strings.Builder
-	sb.WriteString(string(rune(q.Limit)))
-	sb.WriteString(q.StartAfterID)
-	sb.WriteString(string(rune(q.StartAfterDate)))
-	if q.Reverse {
-		sb.WriteString("reverse")
-	}
-	cacheKey := sb.String()
-
-	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
-		_, _ = w.Write(b)
-		return
-	}
-
 	data, err := svc.client.List(r.Context(), q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -128,7 +98,6 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	b, _ := json.Marshal(data)
-	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)
 }
 
@@ -140,13 +109,6 @@ func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Re
 		if i, err := strconv.ParseFloat(v, 64); err == nil {
 			after = i
 		}
-	}
-
-	cacheKey := fmt.Sprintf("tag_%s_%.16f", tag, after)
-
-	if b, _ := svc.cache.Get(cacheKey); len(b) > 0 {
-		_, _ = w.Write(b)
-		return
 	}
 
 	data, err := svc.client.ListByTag(r.Context(), tag, after)
@@ -161,6 +123,5 @@ func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	b, _ := json.Marshal(data)
-	_ = svc.cache.Set(cacheKey, b)
 	_, _ = w.Write(b)
 }

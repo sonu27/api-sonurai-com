@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"api/internal/client"
 	"api/internal/middleware"
@@ -17,7 +16,6 @@ import (
 	"api/internal/updater"
 
 	firebase "firebase.google.com/go"
-	"github.com/allegro/bigcache"
 	"github.com/go-chi/chi"
 	rscors "github.com/rs/cors"
 	"google.golang.org/api/option"
@@ -44,14 +42,9 @@ func Bootstrap() error {
 		return err
 	}
 
-	cache, err := bigcache.NewBigCache(bigcache.DefaultConfig(time.Minute * 10))
-	if err != nil {
-		return err
-	}
-
 	wallpaperClient := client.NewClient(collection, firestore)
 
-	svc := service.NewService(cache, &wallpaperClient)
+	svc := service.NewService(&wallpaperClient)
 
 	cors := rscors.New(rscors.Options{
 		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},

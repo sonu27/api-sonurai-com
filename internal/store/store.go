@@ -1,4 +1,4 @@
-package client
+package store
 
 import (
 	"context"
@@ -6,29 +6,40 @@ import (
 	"fmt"
 	"sort"
 
-	"api/internal/model"
-	"api/internal/server"
-
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func NewClient(collection string, firestore *firestore.Client) Client {
-	return Client{
+type Storer interface {
+	Get(ctx context.Context, id string) (*WallpaperWithTags, error)
+	GetByOldID(ctx context.Context, id int) (*WallpaperWithTags, error)
+	List(ctx context.Context, q ListQuery) (*ListResponse, error)
+	ListByTag(ctx context.Context, tag string, after float64) (*ListResponse, error)
+}
+
+type ListQuery struct {
+	Limit          int
+	StartAfterDate int
+	StartAfterID   string
+	Reverse        bool
+}
+
+func New(collection string, firestore *firestore.Client) Store {
+	return Store{
 		collection: collection,
 		firestore:  firestore,
 	}
 }
 
-type Client struct {
+type Store struct {
 	collection string
 	firestore  *firestore.Client
 }
 
-func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, error) {
-	doc, err := c.firestore.Collection(c.collection).Doc(id).Get(ctx)
+func (s *Store) Get(ctx context.Context, id string) (*WallpaperWithTags, error) {
+	doc, err := s.firestore.Collection(s.collection).Doc(id).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			return nil, nil
@@ -36,7 +47,7 @@ func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, 
 		return nil, err
 	}
 
-	wallpaper := new(model.WallpaperWithTags)
+	wallpaper := new(WallpaperWithTags)
 	if err := jsonToAny(doc.Data(), wallpaper); err != nil {
 		return nil, err
 	}
@@ -44,8 +55,8 @@ func (c *Client) Get(ctx context.Context, id string) (*model.WallpaperWithTags, 
 	return wallpaper, nil
 }
 
-func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error) {
-	iter := c.firestore.Collection(c.collection).Where("oldId", "==", id).Documents(ctx)
+func (s *Store) GetByOldID(ctx context.Context, id int) (*WallpaperWithTags, error) {
+	iter := s.firestore.Collection(s.collection).Where("oldId", "==", id).Documents(ctx)
 
 	doc, err := iter.Next()
 	if err != nil {
@@ -55,7 +66,7 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTa
 		return nil, err
 	}
 
-	wallpaper := new(model.WallpaperWithTags)
+	wallpaper := new(WallpaperWithTags)
 	if err := jsonToAny(doc.Data(), &wallpaper); err != nil {
 		return nil, err
 	}
@@ -63,9 +74,9 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTa
 	return wallpaper, nil
 }
 
-func (c *Client) List(ctx context.Context, q server.ListQuery) (*model.ListResponse, error) {
+func (s *Store) List(ctx context.Context, q ListQuery) (*ListResponse, error) {
 	showPrev := false
-	query := c.firestore.Collection(c.collection).Limit(q.Limit)
+	query := s.firestore.Collection(s.collection).Limit(q.Limit)
 
 	if q.Reverse {
 		query = query.
@@ -88,9 +99,9 @@ func (c *Client) List(ctx context.Context, q server.ListQuery) (*model.ListRespo
 		return nil, err
 	}
 
-	var res model.ListResponse
+	var res ListResponse
 	for _, v := range dsnap {
-		var wallpaper model.Wallpaper
+		var wallpaper Wallpaper
 		if err := jsonToAny(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
@@ -103,7 +114,7 @@ func (c *Client) List(ctx context.Context, q server.ListQuery) (*model.ListRespo
 
 	if len(res.Data) > 0 {
 		last := res.Data[len(res.Data)-1]
-		res.Links = &model.Links{Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)}
+		res.Links = &Links{Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)}
 
 		if showPrev {
 			first := res.Data[0]
@@ -114,8 +125,8 @@ func (c *Client) List(ctx context.Context, q server.ListQuery) (*model.ListRespo
 	return &res, nil
 }
 
-func (c *Client) ListByTag(ctx context.Context, tag string, after float64) (*model.ListResponse, error) {
-	dsnap, err := c.firestore.Collection(c.collection).
+func (s *Store) ListByTag(ctx context.Context, tag string, after float64) (*ListResponse, error) {
+	dsnap, err := s.firestore.Collection(s.collection).
 		Where(fmt.Sprintf("tags.%s", tag), "<", after).
 		Limit(36).
 		OrderBy(fmt.Sprintf("tags.%s", tag), firestore.Desc).
@@ -124,9 +135,9 @@ func (c *Client) ListByTag(ctx context.Context, tag string, after float64) (*mod
 		return nil, err
 	}
 
-	var res model.ListResponse
+	var res ListResponse
 	for _, v := range dsnap {
-		var wallpaper model.Wallpaper
+		var wallpaper Wallpaper
 		if err := jsonToAny(v.Data(), &wallpaper); err != nil {
 			return nil, err
 		}
@@ -135,7 +146,7 @@ func (c *Client) ListByTag(ctx context.Context, tag string, after float64) (*mod
 
 	if len(res.Data) > 0 {
 		next := dsnap[len(dsnap)-1].Data()["tags"].(map[string]any)[tag].(float64)
-		res.Links = &model.Links{Next: fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", tag, next)}
+		res.Links = &Links{Next: fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", tag, next)}
 	}
 
 	return &res, nil

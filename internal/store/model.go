@@ -1,9 +1,4 @@
-package model
-
-type ListResponse struct {
-	Data  []Wallpaper `json:"data"`
-	Links *Links      `json:"links,omitempty"`
-}
+package store
 
 type Wallpaper struct {
 	ID        string `json:"id"`
@@ -18,6 +13,11 @@ type WallpaperWithTags struct {
 	Wallpaper
 
 	Tags map[string]float64 `json:"tags"`
+}
+
+type ListResponse struct {
+	Data  []Wallpaper `json:"data"`
+	Links *Links      `json:"links,omitempty"`
 }
 
 type Links struct {

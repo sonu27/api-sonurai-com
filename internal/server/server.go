@@ -1,53 +1,58 @@
-package service
+package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
-	"api/internal/model"
+	"api/internal/middleware"
+	"api/internal/store"
 
 	"github.com/go-chi/chi"
+	rscors "github.com/rs/cors"
 )
 
-type WallpaperClient interface {
-	Get(ctx context.Context, id string) (*model.WallpaperWithTags, error)
-	GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTags, error)
-	List(ctx context.Context, q ListQuery) (*model.ListResponse, error)
-	ListByTag(ctx context.Context, tag string, after float64) (*model.ListResponse, error)
+func New(store store.Storer) Server {
+	s := Server{store: store}
+
+	cors := rscors.New(rscors.Options{
+		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},
+		AllowCredentials: true,
+		Debug:            false,
+	})
+
+	r := chi.NewRouter()
+	r.Use(cors.Handler)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(""))
+	})
+	r.Route("/wallpapers", func(r chi.Router) {
+		r.Use(middleware.JSONHeaders)
+		r.Get("/", s.ListWallpapersHandler)
+		r.Get("/tags/{tag}", s.ListWallpapersByTagHandler)
+		r.Get("/{id}", s.GetWallpaperHandler)
+	})
+	s.Handler = r
+	return s
 }
 
-type ListQuery struct {
-	Limit          int
-	StartAfterDate int
-	StartAfterID   string
-	Reverse        bool
-}
-
-func NewService(client WallpaperClient) Service {
-	return Service{
-		client: client,
-	}
-}
-
-type Service struct {
+type Server struct {
 	http.Handler
-	client WallpaperClient
+	store store.Storer
 }
 
-func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
+func (svc *Server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	var wallpaper *model.WallpaperWithTags
+	var wallpaper *store.WallpaperWithTags
 	if i, err := strconv.Atoi(id); err == nil {
-		wallpaper, err = svc.client.GetByOldID(r.Context(), i)
+		wallpaper, err = svc.store.GetByOldID(r.Context(), i)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		wallpaper, err = svc.client.Get(r.Context(), id)
+		wallpaper, err = svc.store.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -63,8 +68,8 @@ func (svc *Service) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) 
 	_, _ = w.Write(b)
 }
 
-func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
-	q := ListQuery{Limit: 24}
+func (svc *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
+	q := store.ListQuery{Limit: 24}
 
 	if v := r.URL.Query().Get("startAfterDate"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
@@ -87,7 +92,7 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	data, err := svc.client.List(r.Context(), q)
+	data, err := svc.store.List(r.Context(), q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -102,7 +107,7 @@ func (svc *Service) ListWallpapersHandler(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write(b)
 }
 
-func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
+func (svc *Server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
 	tag := chi.URLParam(r, "tag")
 	var after float64 = 1
 
@@ -112,7 +117,7 @@ func (svc *Service) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	data, err := svc.client.ListByTag(r.Context(), tag, after)
+	data, err := svc.store.ListByTag(r.Context(), tag, after)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -10,14 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"api/internal/client"
-	"api/internal/middleware"
-	"api/internal/service"
+	"api/internal/server"
+	"api/internal/store"
 	"api/internal/updater"
 
 	firebase "firebase.google.com/go"
-	"github.com/go-chi/chi"
-	rscors "github.com/rs/cors"
 	"google.golang.org/api/option"
 )
 
@@ -42,27 +39,9 @@ func Bootstrap() error {
 		return err
 	}
 
-	wallpaperClient := client.NewClient(collection, firestore)
+	wallpaperClient := store.New(collection, firestore)
 
-	svc := service.NewService(&wallpaperClient)
-
-	cors := rscors.New(rscors.Options{
-		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},
-		AllowCredentials: true,
-		Debug:            false,
-	})
-
-	r := chi.NewRouter()
-	r.Use(cors.Handler)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(""))
-	})
-	r.Route("/wallpapers", func(r chi.Router) {
-		r.Use(middleware.JSONHeaders)
-		r.Get("/", svc.ListWallpapersHandler)
-		r.Get("/tags/{tag}", svc.ListWallpapersByTagHandler)
-		r.Get("/{id}", svc.GetWallpaperHandler)
-	})
+	svr := server.New(&wallpaperClient)
 
 	u, err := updater.New(ctx, sa)
 	if err != nil {
@@ -81,7 +60,7 @@ func Bootstrap() error {
 	go func() {
 		port := os.Getenv("PORT")
 		log.Printf("server started on http://localhost:%s", port)
-		err := http.ListenAndServe(":"+port, r)
+		err := http.ListenAndServe(":"+port, svr)
 		if err != nil {
 			errs <- err
 		}

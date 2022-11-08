@@ -32,6 +32,7 @@ func NewService(client WallpaperClient) Service {
 }
 
 type Service struct {
+	http.Handler
 	client WallpaperClient
 }
 

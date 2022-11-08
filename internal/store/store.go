@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"api/internal/model"
-	"api/internal/service"
+	"api/internal/server"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
@@ -63,7 +63,7 @@ func (c *Client) GetByOldID(ctx context.Context, id int) (*model.WallpaperWithTa
 	return wallpaper, nil
 }
 
-func (c *Client) List(ctx context.Context, q service.ListQuery) (*model.ListResponse, error) {
+func (c *Client) List(ctx context.Context, q server.ListQuery) (*model.ListResponse, error) {
 	showPrev := false
 	query := c.firestore.Collection(c.collection).Limit(q.Limit)
 

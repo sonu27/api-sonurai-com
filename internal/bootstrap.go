@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -41,7 +40,8 @@ func Bootstrap() error {
 
 	wallpaperClient := store.New(collection, firestore)
 
-	srv := server.New(&wallpaperClient)
+	port := os.Getenv("PORT")
+	srv := server.New(port, &wallpaperClient)
 
 	u, err := updater.New(ctx, sa)
 	if err != nil {
@@ -58,9 +58,8 @@ func Bootstrap() error {
 	}()
 
 	go func() {
-		port := os.Getenv("PORT")
 		log.Printf("server started on http://localhost:%s", port)
-		err := http.ListenAndServe(":"+port, srv)
+		err := srv.ListenAndServe()
 		if err != nil {
 			errs <- err
 		}

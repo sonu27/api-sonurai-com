@@ -12,15 +12,14 @@ import (
 	rscors "github.com/rs/cors"
 )
 
-func New(store store.Storer) Server {
-	s := Server{store: store}
-
+func New(port string, store store.Storer) http.Server {
 	cors := rscors.New(rscors.Options{
 		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},
 		AllowCredentials: true,
 		Debug:            false,
 	})
 
+	s := server{store: store}
 	r := chi.NewRouter()
 	r.Use(cors.Handler)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -32,16 +31,18 @@ func New(store store.Storer) Server {
 		r.Get("/tags/{tag}", s.ListWallpapersByTagHandler)
 		r.Get("/{id}", s.GetWallpaperHandler)
 	})
-	s.Handler = r
-	return s
+
+	return http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
 }
 
-type Server struct {
-	http.Handler
+type server struct {
 	store store.Storer
 }
 
-func (s *Server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var wallpaper *store.WallpaperWithTags
@@ -68,7 +69,7 @@ func (s *Server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-func (s *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 	q := store.ListQuery{Limit: 24}
 
 	if v := r.URL.Query().Get("startAfterDate"); v != "" {
@@ -107,7 +108,7 @@ func (s *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-func (s *Server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
 	tag := chi.URLParam(r, "tag")
 	var after float64 = 1
 

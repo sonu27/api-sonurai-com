@@ -41,18 +41,18 @@ type Server struct {
 	store store.Storer
 }
 
-func (svc *Server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var wallpaper *store.WallpaperWithTags
 	if i, err := strconv.Atoi(id); err == nil {
-		wallpaper, err = svc.store.GetByOldID(r.Context(), i)
+		wallpaper, err = s.store.GetByOldID(r.Context(), i)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		wallpaper, err = svc.store.Get(r.Context(), id)
+		wallpaper, err = s.store.Get(r.Context(), id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -68,7 +68,7 @@ func (svc *Server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-func (svc *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 	q := store.ListQuery{Limit: 24}
 
 	if v := r.URL.Query().Get("startAfterDate"); v != "" {
@@ -92,7 +92,7 @@ func (svc *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	data, err := svc.store.List(r.Context(), q)
+	data, err := s.store.List(r.Context(), q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -107,7 +107,7 @@ func (svc *Server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request)
 	_, _ = w.Write(b)
 }
 
-func (svc *Server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
 	tag := chi.URLParam(r, "tag")
 	var after float64 = 1
 
@@ -117,7 +117,7 @@ func (svc *Server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	data, err := svc.store.ListByTag(r.Context(), tag, after)
+	data, err := s.store.ListByTag(r.Context(), tag, after)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -41,7 +41,7 @@ func Bootstrap() error {
 
 	wallpaperClient := store.New(collection, firestore)
 
-	svr := server.New(&wallpaperClient)
+	srv := server.New(&wallpaperClient)
 
 	u, err := updater.New(ctx, sa)
 	if err != nil {
@@ -60,7 +60,7 @@ func Bootstrap() error {
 	go func() {
 		port := os.Getenv("PORT")
 		log.Printf("server started on http://localhost:%s", port)
-		err := http.ListenAndServe(":"+port, svr)
+		err := http.ListenAndServe(":"+port, srv)
 		if err != nil {
 			errs <- err
 		}

@@ -1,11 +1,48 @@
-package updater
+package pubsub
 
 import (
 	"context"
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/option"
 )
+
+func Start(
+	ctx context.Context,
+	sa option.ClientOption,
+	projectID string,
+	topicID string,
+	fn func(ctx context.Context) error,
+) error {
+	pubsubClient, err := pubsub.NewClient(ctx, projectID, sa)
+	if err != nil {
+		return err
+	}
+	defer pubsubClient.Close()
+
+	topic, err := getOrCreateTopic(ctx, pubsubClient, topicID)
+	if err != nil {
+		return err
+	}
+
+	sub, err := getOrCreateSub(ctx, pubsubClient, "sub1", &pubsub.SubscriptionConfig{
+		Topic:                     topic,
+		EnableExactlyOnceDelivery: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("image updater listening")
+	return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		msg.Ack()
+		err := fn(ctx)
+		if err != nil {
+			fmt.Println(err)
+		}
+	})
+}
 
 // getOrCreateTopic gets a topic or creates it if it doesn't exist.
 func getOrCreateTopic(ctx context.Context, client *pubsub.Client, topicID string) (*pubsub.Topic, error) {
@@ -33,7 +70,7 @@ func getOrCreateSub(ctx context.Context, client *pubsub.Client, subID string, cf
 	if !ok {
 		sub, err = client.CreateSubscription(ctx, subID, *cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create subscription (%q): %v", topicID, err)
+			return nil, fmt.Errorf("failed to create subscription (%q): %v", subID, err)
 		}
 	}
 	return sub, nil

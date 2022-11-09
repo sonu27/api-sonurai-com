@@ -12,6 +12,7 @@ import (
 	"api/internal/server"
 	"api/internal/store"
 	"api/internal/updater"
+	"api/internal/updater/pubsub"
 
 	firebase "firebase.google.com/go"
 	"google.golang.org/api/option"
@@ -50,7 +51,7 @@ func Bootstrap() error {
 
 	errs := make(chan error, 1)
 	go func() {
-		err := u.Start(ctx, sa)
+		err := pubsub.Start(ctx, sa, updater.ProjectID, updater.TopicID, u.Update)
 		if err != nil {
 			errs <- err
 		}

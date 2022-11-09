@@ -13,7 +13,6 @@ import (
 	"api/internal/updater/bing_image"
 
 	"cloud.google.com/go/firestore"
-	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"cloud.google.com/go/translate"
 	vision "cloud.google.com/go/vision/apiv1"
@@ -27,8 +26,8 @@ import (
 )
 
 const (
-	projectID           = "sonurai-com-v3"
-	topicID             = "update-wallpapers-v2"
+	ProjectID           = "sonurai-com-v3"
+	TopicID             = "update-wallpapers-v2"
 	bucketName          = "images.sonurai.com"
 	firestoreCollection = "BingWallpapers"
 	bingURL             = "https://www.bing.com"
@@ -107,37 +106,6 @@ type Updater struct {
 	httpClient      *http.Client
 	imageClient     *bing_image.Client
 	translateClient *translate.Client
-}
-
-func (u *Updater) Start(ctx context.Context, sa option.ClientOption) error {
-	fmt.Println("image updater listening")
-
-	pubsubClient, err := pubsub.NewClient(ctx, projectID, sa)
-	if err != nil {
-		return err
-	}
-	defer pubsubClient.Close()
-
-	topic, err := getOrCreateTopic(ctx, pubsubClient, topicID)
-	if err != nil {
-		return err
-	}
-
-	sub, err := getOrCreateSub(ctx, pubsubClient, "sub1", &pubsub.SubscriptionConfig{
-		Topic:                     topic,
-		EnableExactlyOnceDelivery: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		msg.Ack()
-		err := u.Update(ctx)
-		if err != nil {
-			fmt.Println(err)
-		}
-	})
 }
 
 func (u *Updater) Update(ctx context.Context) error {

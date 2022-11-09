@@ -18,6 +18,7 @@ import (
 	"cloud.google.com/go/translate"
 	vision "cloud.google.com/go/vision/apiv1"
 	firebase "firebase.google.com/go"
+	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 	visionP "google.golang.org/genproto/googleapis/cloud/vision/v1"
@@ -175,7 +176,7 @@ func (u *Updater) Update(ctx context.Context) error {
 				return err
 			}
 
-			if stringInSlice(result.Market, nonENMarkets) && stringInSlice(v.Market, ENMarkets) {
+			if slices.Contains(nonENMarkets, result.Market) && slices.Contains(ENMarkets, v.Market) {
 				// maintain old date
 				v.Date = result.Date
 			} else {
@@ -185,7 +186,7 @@ func (u *Updater) Update(ctx context.Context) error {
 
 		u.downloadFile(ctx, v.URL, v.Filename+".jpg")
 
-		if stringInSlice(v.Market, nonENMarkets) {
+		if slices.Contains(nonENMarkets, v.Market) {
 			translatedTitle, err := u.translateText(ctx, v.Title)
 			if err != nil {
 				return err

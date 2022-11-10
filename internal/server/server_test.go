@@ -74,6 +74,9 @@ func TestListWallpapers_ShowsPrev(t *testing.T) {
 func convertTo(r io.ReadCloser, out any) error {
 	b1, err := io.ReadAll(r)
 	defer r.Close()
+	if err != nil {
+		return err
+	}
 
 	m := make(map[string]any)
 	if err := json.Unmarshal(b1, &m); err != nil {

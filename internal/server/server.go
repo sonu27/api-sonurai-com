@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -70,6 +71,7 @@ func (s *server) GetWallpaperHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
+	showPrev := false
 	q := store.ListQuery{Limit: 24}
 
 	if v := r.URL.Query().Get("startAfterDate"); v != "" {
@@ -93,18 +95,34 @@ func (s *server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data, err := s.store.List(r.Context(), q)
+	if q.StartAfterDate != 0 && q.StartAfterID != "" {
+		showPrev = true
+	}
+
+	wallpapers, err := s.store.List(r.Context(), q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if len(data.Data) == 0 {
+	if len(wallpapers) == 0 {
 		w.WriteHeader(404)
 		return
 	}
 
-	b, _ := json.Marshal(data)
+	res := ListResponse{
+		Data: wallpapers,
+	}
+
+	last := wallpapers[len(wallpapers)-1]
+	res.Links = &Links{Next: fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s", last.Date, last.ID)}
+
+	if showPrev {
+		first := wallpapers[0]
+		res.Links.Prev = fmt.Sprintf("/wallpapers?startAfterDate=%d&startAfterID=%s&prev=1", first.Date, first.ID)
+	}
+
+	b, _ := json.Marshal(res)
 	_, _ = w.Write(b)
 }
 
@@ -118,17 +136,25 @@ func (s *server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	data, err := s.store.ListByTag(r.Context(), tag, after)
+	wallpapers, next, err := s.store.ListByTag(r.Context(), tag, after)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if len(data.Data) == 0 {
+	if len(wallpapers) == 0 {
 		w.WriteHeader(404)
 		return
 	}
 
-	b, _ := json.Marshal(data)
+	res := ListResponse{
+		Data: wallpapers,
+	}
+
+	if len(wallpapers) == 36 && next > 0 {
+		res.Links = &Links{Next: fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", tag, next)}
+	}
+
+	b, _ := json.Marshal(res)
 	_, _ = w.Write(b)
 }

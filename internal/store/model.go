@@ -14,13 +14,3 @@ type WallpaperWithTags struct {
 
 	Tags map[string]float64 `json:"tags"`
 }
-
-type ListResponse struct {
-	Data  []Wallpaper `json:"data"`
-	Links *Links      `json:"links,omitempty"`
-}
-
-type Links struct {
-	Prev string `json:"prev,omitempty"`
-	Next string `json:"next,omitempty"`
-}

@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: Bing Wallpapers API
+  version: 0.1.0
+servers:
+  - url: https://api.sonurai.com
+paths:
+  /wallpapers:
+    get:
+      operationId: GetWallpapers
+      summary: Get wallpapers
+      parameters:
+        - in: query
+          name: startAfterDate
+          schema:
+            $ref: '#/components/schemas/Date'
+        - in: query
+          name: startAfterID
+          schema:
+            $ref: '#/components/schemas/ID'
+        - in: query
+          name: prev
+          schema:
+            type: string
+            enum: [1]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WallpaperList'
+        '404':
+          description: Not Found
+  /wallpapers/tags/{tag}:
+    get:
+      operationId: GetTaggedWallpapers
+      summary: Get tagged wallpapers
+      parameters:
+        - in: path
+          name: tag
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WallpaperList'
+        '404':
+          description: Not Found
+  /wallpapers/{id}:
+    get:
+      operationId: GetWallpaper
+      summary: Get wallpaper
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            $ref: '#/components/schemas/ID'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WallpaperWithTags'
+        '404':
+          description: Not Found
+components:
+  schemas:
+    ID:
+      type: string
+    Date:
+      type: integer
+      minimum: 19700101
+      maximum: 30000101
+    Wallpaper:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ID'
+        title:
+          type: string
+        copyright:
+          type: string
+        date:
+          $ref: '#/components/schemas/Date'
+        filename:
+          type: string
+        market:
+          type: string
+    WallpaperWithTags:
+      allOf:
+        - $ref: '#/components/schemas/Wallpaper'
+        - type: object
+          properties:
+            tag:
+              type: object
+              additionalProperties:
+                type: number
+                format: double
+    Links:
+      type: object
+      properties:
+        prev:
+          type: string
+        next:
+          type: string
+    WallpaperList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallpaper'
+        links:
+          $ref: '#/components/schemas/Links'

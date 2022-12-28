@@ -15,7 +15,11 @@ import (
 
 func New(port string, store store.Storer) http.Server {
 	cors := rscors.New(rscors.Options{
-		AllowedOrigins:   []string{"https://sonurai.com", "http://localhost:3000"},
+		AllowedOrigins: []string{
+			"https://sonurai.com",
+			"https://*.vercel.app",
+			"http://localhost:3000",
+		},
 		AllowCredentials: true,
 		Debug:            false,
 	})

@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -74,6 +73,7 @@ func Bootstrap() error {
 	case err := <-errs:
 		return err
 	case <-exit:
-		return fmt.Errorf("sigterm received")
+		log.Println("server stopping")
+		return nil
 	}
 }

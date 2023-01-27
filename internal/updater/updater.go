@@ -152,7 +152,10 @@ func (u *Updater) Update(ctx context.Context) error {
 			}
 		}
 
-		u.downloadFile(ctx, v.URL, v.Filename+".jpg")
+		// todo: add retry if error
+		if err := u.downloadFile(ctx, v.URL, v.Filename+".jpg"); err != nil {
+			return err
+		}
 
 		if slices.Contains(nonENMarkets, v.Market) {
 			translatedTitle, err := u.translateText(ctx, v.Title)
@@ -223,23 +226,24 @@ func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionP.Enti
 	return annotations, nil
 }
 
-func (u *Updater) downloadFile(ctx context.Context, url string, name string) {
+func (u *Updater) downloadFile(ctx context.Context, url string, name string) error {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		fmt.Println(err.Error())
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 	resp, err := u.httpClient.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
+		return fmt.Errorf("failed to download file: %w", err)
 	}
 	defer resp.Body.Close()
 	objWriter := u.bucket.Object(name).NewWriter(ctx)
 
 	_, err = io.Copy(objWriter, resp.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		return fmt.Errorf("failed to write file: %w", err)
 	}
 	objWriter.Close()
+	return nil
 }
 
 func (u *Updater) fetchAndDeduplicateImages(ctx context.Context, markets []string, out map[string]Image) error {

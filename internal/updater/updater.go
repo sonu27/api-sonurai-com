@@ -15,12 +15,12 @@ import (
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/storage"
 	"cloud.google.com/go/translate"
-	vision "cloud.google.com/go/vision/apiv1"
-	firebase "firebase.google.com/go"
+	"cloud.google.com/go/vision/apiv1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
+	"firebase.google.com/go"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
-	visionP "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -206,7 +206,7 @@ func (u *Updater) Update(ctx context.Context) error {
 	return nil
 }
 
-func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionP.EntityAnnotation, error) {
+func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.EntityAnnotation, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	resp, err := u.httpClient.Do(req)
 	if err != nil {

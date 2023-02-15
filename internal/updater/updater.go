@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -20,14 +21,13 @@ import (
 	"firebase.google.com/go"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
-	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	ProjectID           = "sonurai-com-v3"
 	TopicID             = "update-wallpapers-v2"
+	SubID               = "update-wallpapers-v2-sub"
 	bucketName          = "images.sonurai.com"
 	firestoreCollection = "BingWallpapers"
 	bingURL             = "https://www.bing.com"
@@ -51,12 +51,15 @@ var (
 	}
 )
 
-func New(ctx context.Context, sa option.ClientOption) (*Updater, error) {
+func New() (*Updater, error) {
+	ctx := context.Background()
+	conf := &firebase.Config{ProjectID: os.Getenv("PROJECT_ID")}
+
 	httpClient := &http.Client{Timeout: time.Second * 15}
 
 	imageClient := &bing_image.Client{HC: httpClient}
 
-	firebaseClient, err := firebase.NewApp(ctx, nil, sa)
+	firebaseClient, err := firebase.NewApp(ctx, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +82,12 @@ func New(ctx context.Context, sa option.ClientOption) (*Updater, error) {
 		return nil, err
 	}
 
-	annoClient, err := vision.NewImageAnnotatorClient(ctx, sa)
+	annoClient, err := vision.NewImageAnnotatorClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	translateClient, err := translate.NewClient(ctx, sa)
+	translateClient, err := translate.NewClient(ctx)
 	if err != nil {
 		return nil, err
 	}

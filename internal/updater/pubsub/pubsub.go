@@ -3,19 +3,20 @@ package pubsub
 import (
 	"context"
 	"fmt"
+	"google.golang.org/api/option"
 
 	"cloud.google.com/go/pubsub"
-	"google.golang.org/api/option"
 )
 
 func Start(
 	ctx context.Context,
-	sa option.ClientOption,
 	projectID string,
 	topicID string,
+	subID string,
 	fn func(ctx context.Context) error,
+	opts ...option.ClientOption,
 ) error {
-	pubsubClient, err := pubsub.NewClient(ctx, projectID, sa)
+	pubsubClient, err := pubsub.NewClient(ctx, projectID, opts...)
 	if err != nil {
 		return err
 	}
@@ -26,7 +27,7 @@ func Start(
 		return err
 	}
 
-	sub, err := getOrCreateSub(ctx, pubsubClient, "sub1", &pubsub.SubscriptionConfig{
+	sub, err := getOrCreateSub(ctx, pubsubClient, subID, &pubsub.SubscriptionConfig{
 		Topic:                     topic,
 		EnableExactlyOnceDelivery: true,
 	})

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"encoding/base64"
 	"log"
 	"os"
 	"os/signal"
@@ -14,7 +13,6 @@ import (
 	"api/internal/updater/pubsub"
 
 	firebase "firebase.google.com/go"
-	"google.golang.org/api/option"
 )
 
 const collection = "BingWallpapers"
@@ -22,13 +20,8 @@ const collection = "BingWallpapers"
 func Bootstrap() error {
 	ctx := context.Background()
 
-	saJSON, err := base64.StdEncoding.DecodeString(os.Getenv("FIRESTORE_SA"))
-	if err != nil {
-		return err
-	}
-	sa := option.WithCredentialsJSON(saJSON)
-
-	firebaseClient, err := firebase.NewApp(ctx, nil, sa)
+	conf := &firebase.Config{ProjectID: os.Getenv("PROJECT_ID")}
+	firebaseClient, err := firebase.NewApp(ctx, conf)
 	if err != nil {
 		return err
 	}
@@ -43,14 +36,14 @@ func Bootstrap() error {
 	port := os.Getenv("PORT")
 	srv := server.New(port, &wallpaperClient)
 
-	u, err := updater.New(ctx, sa)
+	u, err := updater.New()
 	if err != nil {
 		return err
 	}
 
 	errs := make(chan error, 1)
 	go func() {
-		err := pubsub.Start(ctx, sa, updater.ProjectID, updater.TopicID, u.Update)
+		err := pubsub.Start(ctx, os.Getenv("PROJECT_ID"), updater.TopicID, updater.SubID, u.Update)
 		if err != nil {
 			errs <- err
 		}

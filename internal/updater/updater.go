@@ -1,13 +1,13 @@
 package updater
 
 import (
+	"api/internal/updater/image"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -115,7 +115,7 @@ func (u *Updater) Update(ctx context.Context) error {
 	fmt.Println("updating images")
 
 	var updatedImages []string
-	images := make(map[string]Image)
+	images := make(map[string]image.Image)
 
 	if err := u.fetchAndDeduplicateImages(ctx, ENMarkets, images); err != nil {
 		return err
@@ -142,7 +142,7 @@ func (u *Updater) Update(ctx context.Context) error {
 				return err
 			}
 
-			var result Image
+			var result image.Image
 			if err := json.Unmarshal(b, &result); err != nil {
 				return err
 			}
@@ -249,7 +249,7 @@ func (u *Updater) downloadFile(ctx context.Context, url string, name string) err
 	return nil
 }
 
-func (u *Updater) fetchAndDeduplicateImages(ctx context.Context, markets []string, out map[string]Image) error {
+func (u *Updater) fetchAndDeduplicateImages(ctx context.Context, markets []string, out map[string]image.Image) error {
 	for _, market := range markets {
 		bi, err := u.imageClient.List(ctx, market)
 		if err != nil {
@@ -257,7 +257,7 @@ func (u *Updater) fetchAndDeduplicateImages(ctx context.Context, markets []strin
 		}
 
 		for _, v := range bi {
-			image, err := convertToImage(v, market)
+			image, err := image.From(v, market, bingURL)
 			if err != nil {
 				return err
 			}
@@ -293,52 +293,4 @@ func (u *Updater) translateText(ctx context.Context, text string) (string, error
 
 func (u *Updater) updateWallpaper(ctx context.Context, ID string, data map[string]any) (*firestore.WriteResult, error) {
 	return u.firestoreClient.Collection(firestoreCollection).Doc(ID).Set(ctx, data, firestore.MergeAll)
-}
-
-func convertToImage(bw bing_image.Image, market string) (Image, error) {
-	fullDesc := bw.Copyright
-	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
-	filename := strings.Replace(id, "/th?id=OHR.", "", 1)
-	id = strings.Split(filename, "_")[0]
-
-	date, err := strconv.Atoi(bw.StartDate)
-	if err != nil {
-		return Image{}, err
-	}
-
-	var copyright string
-	var title string
-
-	if a := strings.Split(bw.Copyright, "（©"); len(a) == 2 {
-		// chinese chars
-		title = a[0]
-		copyright = "© " + a[1]
-		copyright = strings.Replace(copyright, "）", "", 1)
-	} else if a := strings.Split(bw.Copyright, "(©"); len(a) == 2 {
-		title = a[0]
-		copyright = "© " + a[1]
-		copyright = strings.Replace(copyright, ")", "", 1)
-	} else {
-		a := strings.Split(bw.Copyright, "©")
-		title = a[0]
-		copyright = "© " + a[1]
-		copyright = strings.Replace(copyright, ")", "", 1)
-	}
-
-	title = strings.TrimSpace(title)
-	copyright = strings.TrimSpace(copyright)
-
-	image := Image{
-		ID:        id,
-		Title:     title,
-		Copyright: copyright,
-		Date:      date,
-		Filename:  filename,
-		Market:    market,
-		FullDesc:  fullDesc,
-		URL:       bingURL + bw.URLBase + "_1920x1200.jpg",
-		ThumbURL:  bingURL + bw.URLBase + "_1920x1080.jpg",
-	}
-
-	return image, nil
 }

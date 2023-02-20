@@ -147,12 +147,12 @@ func (u *Updater) Update(ctx context.Context) error {
 				return err
 			}
 
-			if slices.Contains(nonENMarkets, result.Market) && slices.Contains(ENMarkets, v.Market) {
-				// maintain old date
-				v.Date = result.Date
-			} else {
+			if !slices.Contains(nonENMarkets, result.Market) || !slices.Contains(ENMarkets, v.Market) {
 				continue
 			}
+
+			// maintain old date
+			v.Date = result.Date
 		}
 
 		// todo: add retry if error

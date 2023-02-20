@@ -24,11 +24,12 @@ type Image struct {
 }
 
 type Client struct {
-	HC *http.Client
+	BaseURL string
+	HC      *http.Client
 }
 
 func (c *Client) List(ctx context.Context, market string) ([]Image, error) {
-	resp, err := c.HC.Get("https://www.bing.com/HPImageArchive.aspx?format=js&n=8&mbl=1&mkt=" + market)
+	resp, err := c.HC.Get(c.BaseURL + "/HPImageArchive.aspx?format=js&n=8&mbl=1&mkt=" + market)
 	if err != nil {
 		return nil, err
 	}

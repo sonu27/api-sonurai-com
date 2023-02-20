@@ -11,7 +11,3 @@ type Image struct {
 	URL       string `json:"url"`
 	ThumbURL  string `json:"thumbUrl"`
 }
-
-type PubSubMessage struct {
-	Data []byte `json:"data"`
-}

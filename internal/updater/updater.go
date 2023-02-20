@@ -57,7 +57,7 @@ func New() (*Updater, error) {
 
 	httpClient := &http.Client{Timeout: time.Second * 15}
 
-	imageClient := &bing_image.Client{HC: httpClient}
+	imageClient := &bing_image.Client{BaseURL: bingURL, HC: httpClient}
 
 	firebaseClient, err := firebase.NewApp(ctx, conf)
 	if err != nil {

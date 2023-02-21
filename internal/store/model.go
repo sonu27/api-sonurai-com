@@ -12,5 +12,5 @@ type Wallpaper struct {
 type WallpaperWithTags struct {
 	Wallpaper
 
-	Tags map[string]float64 `json:"tags"`
+	Tags map[string]float32 `json:"tags"`
 }

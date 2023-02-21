@@ -1,28 +1,23 @@
 package updater
 
 import (
+	"api/internal/updater/bing_image"
+	"api/internal/updater/firestore"
 	"api/internal/updater/image"
+	"cloud.google.com/go/storage"
+	"cloud.google.com/go/translate"
+	"cloud.google.com/go/vision/apiv1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 	"context"
-	"encoding/json"
+	"firebase.google.com/go"
 	"fmt"
+	"golang.org/x/exp/slices"
+	"golang.org/x/text/language"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"api/internal/updater/bing_image"
-
-	"cloud.google.com/go/firestore"
-	"cloud.google.com/go/storage"
-	"cloud.google.com/go/translate"
-	"cloud.google.com/go/vision/apiv1"
-	"cloud.google.com/go/vision/v2/apiv1/visionpb"
-	"firebase.google.com/go"
-	"golang.org/x/exp/slices"
-	"golang.org/x/text/language"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -64,7 +59,7 @@ func New() (*Updater, error) {
 		return nil, err
 	}
 
-	firestoreClient, err := firebaseClient.Firestore(ctx)
+	firestoreClient, err := firestore.NewClient(ctx, firestoreCollection, firebaseClient)
 	if err != nil {
 		return nil, err
 	}
@@ -117,92 +112,71 @@ func (u *Updater) Update(ctx context.Context) error {
 	var updatedImages []string
 	images := make(map[string]image.Image)
 
-	if err := u.fetchAndDeduplicateImages(ctx, ENMarkets, images); err != nil {
-		return err
-	}
-	if err := u.fetchAndDeduplicateImages(ctx, nonENMarkets, images); err != nil {
+	if err := u.fetchAndDedupeImages(ctx, append(ENMarkets, nonENMarkets...), images); err != nil {
 		return err
 	}
 
 	// for each wallpaper, check if exists in db
 	fmt.Printf("%d images found\n", len(images))
-	for _, v := range images {
-		if !u.fileExists(v.URL) {
-			continue
+	for _, image := range images {
+		existingImage, err := u.firestoreClient.Get(ctx, image.ID)
+		if err != nil {
+			return err
 		}
 
-		dsnap, err := u.firestoreClient.Collection(firestoreCollection).Doc(v.ID).Get(ctx)
-		if status.Code(err) == codes.NotFound {
-			fmt.Printf("%s new wallpaper found\n", v.ID)
-		}
-
-		if dsnap.Exists() {
-			b, err := json.Marshal(dsnap.Data())
-			if err != nil {
-				return err
-			}
-
-			var result image.Image
-			if err := json.Unmarshal(b, &result); err != nil {
-				return err
-			}
-
-			if !slices.Contains(nonENMarkets, result.Market) || !slices.Contains(ENMarkets, v.Market) {
+		// if exists as non-english, and new existingImage is english, update it
+		if existingImage != nil {
+			if !slices.Contains(nonENMarkets, existingImage.Market) || !slices.Contains(ENMarkets, image.Market) {
 				continue
 			}
 
 			// maintain old date
-			v.Date = result.Date
+			image.Date = existingImage.Date
+
+			_, err = u.firestoreClient.Upsert(ctx, image)
+			if err != nil {
+				return err
+			}
+			updatedImages = append(updatedImages, image.ID)
+
+			continue
 		}
 
+		if !u.fileExists(image.URL) {
+			continue
+		}
+
+		fmt.Printf("%s new wallpaper found\n", image.ID)
+
 		// todo: add retry if error
-		if err := u.downloadFile(ctx, v.URL, v.Filename+".jpg"); err != nil {
+		if err := u.downloadFile(ctx, image.URL, image.Filename+".jpg"); err != nil {
 			return err
 		}
 
-		if slices.Contains(nonENMarkets, v.Market) {
-			translatedTitle, err := u.translateText(ctx, v.Title)
+		// translate title if not english
+		if slices.Contains(nonENMarkets, image.Market) {
+			translatedTitle, err := u.translateText(ctx, image.Title)
 			if err != nil {
 				return err
 			} else if translatedTitle != "" {
-				v.Title = translatedTitle
+				image.Title = translatedTitle
 			}
 		}
 
-		var wallpaper map[string]any
-		inrec, _ := json.Marshal(v)
-		err = json.Unmarshal(inrec, &wallpaper)
+		anno, err := u.detectLabels(ctx, image.ThumbURL)
 		if err != nil {
 			return err
 		}
 
-		_, err = u.updateWallpaper(ctx, v.ID, wallpaper)
+		for _, v := range anno {
+			image.Tags[strings.ToLower(v.Description)] = v.Score
+		}
+
+		_, err = u.firestoreClient.Upsert(ctx, image)
 		if err != nil {
 			return err
 		}
-		updatedImages = append(updatedImages, v.ID)
-
-		// add extras info e.g. labels
-		if !dsnap.Exists() {
-			anno, err := u.detectLabels(ctx, v.ThumbURL)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-
-			tags := make(map[string]float32)
-			for _, v := range anno {
-				tags[strings.ToLower(v.Description)] = v.Score
-			}
-
-			gg := map[string]any{
-				"tags": tags,
-			}
-
-			_, err = u.updateWallpaper(ctx, v.ID, gg)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
+		updatedImages = append(updatedImages, image.ID)
 	}
 
 	fmt.Printf("%d images updated: %s\n", len(updatedImages), strings.Join(updatedImages, ", "))
@@ -234,22 +208,29 @@ func (u *Updater) downloadFile(ctx context.Context, url string, name string) err
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
+
 	resp, err := u.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download file: %w", err)
 	}
 	defer resp.Body.Close()
+
 	objWriter := u.bucket.Object(name).NewWriter(ctx)
 
 	_, err = io.Copy(objWriter, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
-	objWriter.Close()
+
+	err = objWriter.Close()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (u *Updater) fetchAndDeduplicateImages(ctx context.Context, markets []string, out map[string]image.Image) error {
+func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, out map[string]image.Image) error {
 	for _, market := range markets {
 		bi, err := u.imageClient.List(ctx, market)
 		if err != nil {
@@ -289,8 +270,4 @@ func (u *Updater) translateText(ctx context.Context, text string) (string, error
 	}
 
 	return resp[0].Text, nil
-}
-
-func (u *Updater) updateWallpaper(ctx context.Context, ID string, data map[string]any) (*firestore.WriteResult, error) {
-	return u.firestoreClient.Collection(firestoreCollection).Doc(ID).Set(ctx, data, firestore.MergeAll)
 }

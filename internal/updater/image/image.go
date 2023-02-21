@@ -16,6 +16,8 @@ type Image struct {
 	FullDesc  string `json:"fullDesc"`
 	URL       string `json:"url"`
 	ThumbURL  string `json:"thumbUrl"`
+
+	Tags map[string]float32 `json:"tags"`
 }
 
 func From(bw bing_image.Image, market string, bingURL string) (Image, error) {
@@ -61,6 +63,7 @@ func From(bw bing_image.Image, market string, bingURL string) (Image, error) {
 		FullDesc:  fullDesc,
 		URL:       bingURL + bw.URLBase + "_1920x1200.jpg",
 		ThumbURL:  bingURL + bw.URLBase + "_1920x1080.jpg",
+		Tags:      make(map[string]float32),
 	}
 
 	return image, nil

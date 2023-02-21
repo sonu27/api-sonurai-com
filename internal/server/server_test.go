@@ -17,8 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var hc = http.Client{Timeout: 2 * time.Second}
-
 func TestIndexHandler(t *testing.T) {
 	s := server.New("8080", nil)
 	ts := httptest.NewServer(s.Handler)
@@ -30,82 +28,107 @@ func TestIndexHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 }
 
-func TestListWallpapers_ReturnAListOfWallpapers(t *testing.T) {
-	w := []store.Wallpaper{{ID: "test1", Date: 20221221}}
-	db := mocks.NewStorer(t)
-	db.On("List", mock.Anything, mock.Anything).Return(w, nil)
+func TestServer(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      request
+		wantRes  any
+		dbMockFn func(*mocks.Storer)
+		gotRes   converter[server.ListResponse]
+	}{
+		{
+			name: "ListWallpapers_ReturnsAListOfWallpapers",
+			req: request{
+				method: http.MethodGet,
+				path:   "/wallpapers",
+			},
+			wantRes: server.ListResponse{
+				Data: []store.Wallpaper{
+					{ID: "test1", Date: 20221221},
+					{ID: "test2", Date: 20221222},
+				},
+				Links: &server.Links{
+					Next: "/wallpapers?startAfterDate=20221222&startAfterID=test2",
+				},
+			},
+			dbMockFn: func(db *mocks.Storer) {
+				w := []store.Wallpaper{
+					{ID: "test1", Date: 20221221},
+					{ID: "test2", Date: 20221222},
+				}
+				db.On("List", mock.Anything, mock.Anything).Return(w, nil)
+			},
+			gotRes: converter[server.ListResponse]{},
+		},
+		{
+			name: "ListWallpapers_ShowsPrev",
+			req: request{
+				method: http.MethodGet,
+				path:   "/wallpapers?startAfterDate=20221222&startAfterID=test2",
+			},
+			wantRes: server.ListResponse{
+				Data: []store.Wallpaper{
+					{ID: "test3", Date: 20221223},
+					{ID: "test4", Date: 20221224},
+				},
+				Links: &server.Links{
+					Prev: "/wallpapers?startAfterDate=20221223&startAfterID=test3&prev=1",
+					Next: "/wallpapers?startAfterDate=20221224&startAfterID=test4",
+				},
+			},
+			dbMockFn: func(db *mocks.Storer) {
+				w := []store.Wallpaper{
+					{ID: "test3", Date: 20221223},
+					{ID: "test4", Date: 20221224},
+				}
+				db.On("List", mock.Anything, mock.Anything).Return(w, nil)
+			},
+			gotRes: converter[server.ListResponse]{},
+		},
+		{
+			name: "ListWallpapersByTag_ReturnsAListOfWallpapers",
+			req: request{
+				method: http.MethodGet,
+				path:   "/wallpapers/tags/test-tag",
+			},
+			wantRes: server.ListResponse{
+				Data: []store.Wallpaper{
+					{ID: "test1", Date: 20221221},
+					{ID: "test2", Date: 20221222},
+				},
+			},
+			dbMockFn: func(db *mocks.Storer) {
+				w := []store.Wallpaper{
+					{ID: "test1", Date: 20221221},
+					{ID: "test2", Date: 20221222},
+				}
+				db.On("ListByTag", mock.Anything, mock.Anything, mock.Anything).Return(w, 0.999, nil)
+			},
+			gotRes: converter[server.ListResponse]{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := mocks.NewStorer(t)
+			s := server.New("8080", db)
 
-	s := server.New("8080", db)
-	ts := httptest.NewServer(s.Handler)
-	defer ts.Close()
+			tt.dbMockFn(db)
 
-	req, err := http.NewRequest(http.MethodGet, ts.URL+"/wallpapers", nil)
-	require.Nil(t, err)
+			ts := httptest.NewServer(s.Handler)
+			defer ts.Close()
 
-	res, err := hc.Do(req)
-	require.Nil(t, err)
+			req, err := http.NewRequest(tt.req.method, ts.URL+tt.req.path, tt.req.body)
+			require.Nil(t, err)
 
-	var listResponse server.ListResponse
-	err = convertTo(res.Body, &listResponse)
-	require.Nil(t, err)
+			res, err := hc.Do(req)
+			require.Nil(t, err)
 
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	assert.Equal(t, 1, len(listResponse.Data))
-	assert.Equal(t, "test1", listResponse.Data[0].ID)
-	assert.Empty(t, listResponse.Links.Prev)
-	assert.Equal(t, "/wallpapers?startAfterDate=20221221&startAfterID=test1", listResponse.Links.Next)
-}
+			response, err := tt.gotRes.convert(res.Body)
+			require.Nil(t, err)
 
-func TestListWallpapers_ShowsPrev(t *testing.T) {
-	w := []store.Wallpaper{{ID: "test1", Date: 20221027}}
-	db := mocks.NewStorer(t)
-	db.On("List", mock.Anything, mock.Anything).Return(w, nil)
-
-	s := server.New("8080", db)
-	ts := httptest.NewServer(s.Handler)
-	defer ts.Close()
-
-	req, err := http.NewRequest(http.MethodGet, ts.URL+"/wallpapers?startAfterDate=20221027&startAfterID=FrankensteinFriday", nil)
-	require.Nil(t, err)
-
-	res, err := hc.Do(req)
-	require.Nil(t, err)
-
-	var listResponse server.ListResponse
-	err = convertTo(res.Body, &listResponse)
-	require.Nil(t, err)
-
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	assert.Equal(t, 1, len(listResponse.Data))
-	assert.Equal(t, "test1", listResponse.Data[0].ID)
-	assert.Equal(t, "/wallpapers?startAfterDate=20221027&startAfterID=test1&prev=1", listResponse.Links.Prev)
-	assert.Equal(t, "/wallpapers?startAfterDate=20221027&startAfterID=test1", listResponse.Links.Next)
-}
-
-func TestListWallpapersByTag_ReturnAListOfWallpapers(t *testing.T) {
-	w := []store.Wallpaper{{ID: "test1", Date: 20221221}, {ID: "test2", Date: 20221222}}
-	db := mocks.NewStorer(t)
-	db.On("ListByTag", mock.Anything, mock.Anything, mock.Anything).Return(w, 0.999, nil)
-
-	s := server.New("8080", db)
-	ts := httptest.NewServer(s.Handler)
-	defer ts.Close()
-
-	req, err := http.NewRequest(http.MethodGet, ts.URL+"/wallpapers/tags/test-tag", nil)
-	require.Nil(t, err)
-
-	res, err := hc.Do(req)
-	require.Nil(t, err)
-
-	var listResponse server.ListResponse
-	err = convertTo(res.Body, &listResponse)
-	require.Nil(t, err)
-
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	assert.Equal(t, 2, len(listResponse.Data))
-	assert.Equal(t, "test1", listResponse.Data[0].ID)
-	assert.Equal(t, "test2", listResponse.Data[1].ID)
-	assert.Nil(t, listResponse.Links)
+			assert.Equal(t, tt.wantRes, response)
+		})
+	}
 }
 
 func TestGetWallpaper_ReturnsAWallpaper(t *testing.T) {
@@ -126,34 +149,45 @@ func TestGetWallpaper_ReturnsAWallpaper(t *testing.T) {
 	res, err := hc.Do(req)
 	require.Nil(t, err)
 
-	var getResponse store.WallpaperWithTags
-	err = convertTo(res.Body, &getResponse)
+	getResponse, err := converter[store.WallpaperWithTags]{}.convert(res.Body)
 	require.Nil(t, err)
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	assert.Equal(t, w, getResponse)
 }
 
-func convertTo(r io.ReadCloser, out any) error {
+var hc = http.Client{Timeout: 2 * time.Second}
+
+type request struct {
+	method string
+	path   string
+	body   io.Reader
+}
+
+type converter[T any] struct{}
+
+func (c converter[T]) convert(r io.ReadCloser) (T, error) {
+	var out T
+
 	b1, err := io.ReadAll(r)
 	defer r.Close()
 	if err != nil {
-		return err
+		return out, err
 	}
 
 	m := make(map[string]any)
 	if err := json.Unmarshal(b1, &m); err != nil {
-		return err
+		return out, err
 	}
 
 	b2, err := json.Marshal(m)
 	if err != nil {
-		return err
+		return out, err
 	}
 
-	if err := json.Unmarshal(b2, out); err != nil {
-		return err
+	if err := json.Unmarshal(b2, &out); err != nil {
+		return out, err
 	}
 
-	return nil
+	return out, err
 }

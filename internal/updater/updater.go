@@ -6,7 +6,7 @@ import (
 	"api/internal/updater/image"
 	"cloud.google.com/go/storage"
 	"cloud.google.com/go/translate"
-	"cloud.google.com/go/vision/apiv1"
+	"cloud.google.com/go/vision/v2/apiv1"
 	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 	"context"
 	"firebase.google.com/go"
@@ -163,7 +163,7 @@ func (u *Updater) Update(ctx context.Context) error {
 			}
 		}
 
-		anno, err := u.detectLabels(ctx, image.ThumbURL)
+		anno, err := u.detectLabels(ctx, image.Filename+".jpg")
 		if err != nil {
 			return err
 		}
@@ -184,21 +184,30 @@ func (u *Updater) Update(ctx context.Context) error {
 }
 
 func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.EntityAnnotation, error) {
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
-	resp, err := u.httpClient.Do(req)
+	url = fmt.Sprintf("gs://%s/%s", bucketName, url)
+	req := &visionpb.BatchAnnotateImagesRequest{
+		Requests: []*visionpb.AnnotateImageRequest{
+			{
+				Image: &visionpb.Image{
+					Source: &visionpb.ImageSource{
+						GcsImageUri: url,
+					},
+				},
+				Features: []*visionpb.Feature{
+					{
+						Type:       visionpb.Feature_LABEL_DETECTION,
+						MaxResults: 50,
+					},
+				},
+			},
+		},
+	}
+	images, err := u.annoClient.BatchAnnotateImages(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	image, err := vision.NewImageFromReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	annotations, err := u.annoClient.DetectLabels(ctx, image, nil, 50)
-	if err != nil {
-		return nil, err
-	}
+	annotations := images.GetResponses()[0].GetLabelAnnotations()
 
 	return annotations, nil
 }

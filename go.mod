@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/pubsub v1.28.0
 	cloud.google.com/go/storage v1.29.0
 	cloud.google.com/go/translate v1.5.0
-	cloud.google.com/go/vision v1.2.0
 	cloud.google.com/go/vision/v2 v2.6.0
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/go-chi/chi v4.1.2+incompatible
@@ -27,6 +26,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v0.12.0 // indirect
 	cloud.google.com/go/longrunning v0.4.1 // indirect
+	cloud.google.com/go/vision v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

@@ -2,7 +2,9 @@ package bing_image_test
 
 import (
 	"api/internal/updater/bing_image"
+	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -60,13 +62,14 @@ const bingResponse = `{
 
 func TestClient_List(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(bingResponse))
+		_, err := w.Write([]byte(bingResponse))
+		require.Nil(t, err)
 	}))
 	defer server.Close()
 
 	hc := &http.Client{Timeout: time.Second}
 	c := bing_image.Client{BaseURL: server.URL, HC: hc}
-	images, err := c.List(nil, "en-US")
+	images, err := c.List(context.Background(), "en-US")
 	assert.NoError(t, err)
 
 	want := []bing_image.Image{

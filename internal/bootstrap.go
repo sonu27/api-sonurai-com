@@ -1,18 +1,16 @@
 package internal
 
 import (
-	"context"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"api/internal/server"
 	"api/internal/store"
 	"api/internal/updater"
 	"api/internal/updater/pubsub"
-
+	"context"
 	firebase "firebase.google.com/go"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const collection = "BingWallpapers"
@@ -49,7 +47,6 @@ func Bootstrap() error {
 		}
 		close(errs)
 	}()
-
 	go func() {
 		log.Printf("server started on http://localhost:%s", port)
 		err := srv.ListenAndServe()
@@ -66,7 +63,11 @@ func Bootstrap() error {
 	case err := <-errs:
 		return err
 	case <-exit:
-		log.Println("server stopping")
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			return err
+		}
+		log.Println("server stopped")
 		return nil
 	}
 }

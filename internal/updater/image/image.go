@@ -23,8 +23,8 @@ type Image struct {
 func From(bw bing_image.Image, market string, bingURL string) (Image, error) {
 	fullDesc := bw.Copyright
 	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
-	filename := strings.Replace(id, "/th?id=OHR.", "", 1)
-	id = strings.Split(filename, "_")[0]
+	id = strings.Replace(id, "/th?id=OHR.", "", 1)
+	id = strings.Split(id, "_")[0]
 
 	date, err := strconv.Atoi(bw.StartDate)
 	if err != nil {
@@ -58,7 +58,7 @@ func From(bw bing_image.Image, market string, bingURL string) (Image, error) {
 		Title:     title,
 		Copyright: copyright,
 		Date:      date,
-		Filename:  filename,
+		Filename:  id,
 		Market:    market,
 		FullDesc:  fullDesc,
 		URL:       bingURL + bw.URLBase + "_1920x1200.jpg",

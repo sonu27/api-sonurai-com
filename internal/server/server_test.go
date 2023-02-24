@@ -34,7 +34,6 @@ func TestServer(t *testing.T) {
 		req      request
 		wantRes  any
 		dbMockFn func(*mocks.Storer)
-		gotRes   converter[server.ListResponse]
 	}{
 		{
 			name: "ListWallpapers_ReturnsAListOfWallpapers",
@@ -58,7 +57,6 @@ func TestServer(t *testing.T) {
 				}
 				db.On("List", mock.Anything, mock.Anything).Return(w, nil)
 			},
-			gotRes: converter[server.ListResponse]{},
 		},
 		{
 			name: "ListWallpapers_ShowsPrev",
@@ -83,7 +81,6 @@ func TestServer(t *testing.T) {
 				}
 				db.On("List", mock.Anything, mock.Anything).Return(w, nil)
 			},
-			gotRes: converter[server.ListResponse]{},
 		},
 		{
 			name: "ListWallpapersByTag_ReturnsAListOfWallpapers",
@@ -104,7 +101,6 @@ func TestServer(t *testing.T) {
 				}
 				db.On("ListByTag", mock.Anything, mock.Anything, mock.Anything).Return(w, 0.999, nil)
 			},
-			gotRes: converter[server.ListResponse]{},
 		},
 	}
 	for _, tt := range tests {
@@ -123,7 +119,7 @@ func TestServer(t *testing.T) {
 			res, err := hc.Do(req)
 			require.Nil(t, err)
 
-			response, err := tt.gotRes.convert(res.Body)
+			response, err := convert[server.ListResponse](res.Body)
 			require.Nil(t, err)
 
 			assert.Equal(t, tt.wantRes, response)
@@ -149,7 +145,7 @@ func TestGetWallpaper_ReturnsAWallpaper(t *testing.T) {
 	res, err := hc.Do(req)
 	require.Nil(t, err)
 
-	getResponse, err := converter[store.WallpaperWithTags]{}.convert(res.Body)
+	getResponse, err := convert[store.WallpaperWithTags](res.Body)
 	require.Nil(t, err)
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -164,9 +160,7 @@ type request struct {
 	body   io.Reader
 }
 
-type converter[T any] struct{}
-
-func (c converter[T]) convert(r io.ReadCloser) (T, error) {
+func convert[T any](r io.ReadCloser) (T, error) {
 	var out T
 
 	b1, err := io.ReadAll(r)

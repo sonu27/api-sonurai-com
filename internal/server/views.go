@@ -17,7 +17,28 @@ func (s *server) AboutViewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) ListWallpapersViewHandler(w http.ResponseWriter, r *http.Request) {
+	showPrev := false
 	q := store.ListQuery{Limit: 24}
+
+	chi.URLParam(r, "date")
+
+	if v := chi.URLParam(r, "date"); v != "" {
+		if i, err := strconv.Atoi(v); err == nil {
+			q.StartAfterDate = i
+		}
+	}
+
+	if v := chi.URLParam(r, "id"); v != "" {
+		q.StartAfterID = v
+	}
+
+	if v := r.URL.Query().Get("prev"); v != "" {
+		q.Reverse = true
+	}
+
+	if q.StartAfterDate != 0 && q.StartAfterID != "" {
+		showPrev = true
+	}
 
 	wallpapers, err := s.store.List(r.Context(), q)
 	if err != nil {
@@ -31,12 +52,21 @@ func (s *server) ListWallpapersViewHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	type Page struct {
+		Prev       string
+		Next       string
 		Wallpapers []store.Wallpaper
 	}
 
-	if err := view.WallpaperIndex.Execute(w, Page{
+	p := Page{
+		Next:       fmt.Sprintf("/bingwallpapers/page/%d/%s", wallpapers[len(wallpapers)-1].Date, wallpapers[len(wallpapers)-1].ID),
 		Wallpapers: wallpapers,
-	}); err != nil {
+	}
+
+	if showPrev {
+		p.Prev = fmt.Sprintf("/bingwallpapers/page/%d/%s?prev=1", wallpapers[0].Date, wallpapers[0].ID)
+	}
+
+	if err := view.WallpaperIndex.Execute(w, p); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

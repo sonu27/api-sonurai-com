@@ -1,6 +1,6 @@
-{{ define "title" }}Bing Wallpapers{{ end }}
+{{ define "title" }}Tagged "{{ .Tag }}" - Bing Wallpapers{{ end }}
 {{ define "main" }}
-  <h1 class="text-3xl mb-2 text-white mx-4 md:mx-0">Bing Wallpapers</h1>
+  <h1 class="text-3xl mb-2 text-white mx-4 md:mx-0">Wallpapers tagged with &quot;{{ .Tag }}&quot;</h1>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
       {{ range $i, $w := .Wallpapers }}
         <figure class="wallpaper relative">

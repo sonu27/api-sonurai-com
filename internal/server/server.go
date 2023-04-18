@@ -1,13 +1,13 @@
 package server
 
 import (
+	"api/internal/middleware"
+	"api/internal/store"
+	"api/public"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-
-	"api/internal/middleware"
-	"api/internal/store"
 
 	"github.com/go-chi/chi"
 	rscors "github.com/rs/cors"
@@ -27,8 +27,17 @@ func New(port string, store store.Storer) http.Server {
 	s := server{store: store}
 	r := chi.NewRouter()
 	r.Use(cors.Handler)
+
+	// public files
+	r.Handle("/*", http.FileServer(http.FS(public.Files)))
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(""))
+	})
+	r.Get("/about", s.AboutViewHandler)
+	r.Route("/bingwallpapers", func(r chi.Router) {
+		r.Get("/", s.ListWallpapersViewHandler)
+		r.Get("/{id}", s.GetWallpaperViewHandler)
 	})
 	r.Route("/wallpapers", func(r chi.Router) {
 		r.Use(middleware.JSONHeaders)

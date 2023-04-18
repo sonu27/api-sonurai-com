@@ -1,0 +1,19 @@
+{{ define "main" }}
+  <h1 class="text-3xl mb-2 text-white mx-4 md:mx-0">Bing Wallpapers</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+      {{ range $i, $w := .Wallpapers }}
+        <figure class="wallpaper relative">
+          <a href="/bingwallpapers/{{ .ID }}" title="{{ .Title }}">
+            <img
+              src="https://images.sonurai.com/{{ .ID }}.jpg"
+              loading="{{ if lt $i 3 }}eager{{ else }}lazy{{ end }}"
+              alt="{{ .Title }}"
+            >
+            <figcaption class="caption hidden absolute bottom-0 left-0 p-4 h-full w-full text-2xl bg-black bg-opacity-80 text-white">
+              {{ .Title }}
+            </figcaption>
+          </a>
+        </figure>
+      {{ end }}
+  </div>
+{{ end }}

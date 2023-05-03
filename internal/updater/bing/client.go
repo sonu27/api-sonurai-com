@@ -1,4 +1,4 @@
-package bing_image
+package bing
 
 import (
 	"context"

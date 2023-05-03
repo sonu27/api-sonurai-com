@@ -1,7 +1,7 @@
-package bing_image_test
+package bing_test
 
 import (
-	"api/internal/updater/bing_image"
+	"api/internal/updater/bing"
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,11 +68,11 @@ func TestClient_List(t *testing.T) {
 	defer server.Close()
 
 	hc := &http.Client{Timeout: time.Second}
-	c := bing_image.Client{BaseURL: server.URL, HC: hc}
+	c := bing.Client{BaseURL: server.URL, HC: hc}
 	images, err := c.List(context.Background(), "en-US")
 	assert.NoError(t, err)
 
-	want := []bing_image.Image{
+	want := []bing.Image{
 		{
 			Copyright: "Washington Monument and Capitol Building on the National Mall, Washington, DC (© AevanStock/Shutterstock)",
 			StartDate: "20230220",

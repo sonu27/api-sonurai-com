@@ -1,7 +1,7 @@
 package updater
 
 import (
-	"api/internal/updater/bing_image"
+	"api/internal/updater/bing"
 	"api/internal/updater/firestore"
 	"api/internal/updater/image"
 	"cloud.google.com/go/storage"
@@ -52,7 +52,7 @@ func New() (*Updater, error) {
 
 	httpClient := &http.Client{Timeout: time.Second * 15}
 
-	imageClient := &bing_image.Client{BaseURL: bingURL, HC: httpClient}
+	imageClient := &bing.Client{BaseURL: bingURL, HC: httpClient}
 
 	firebaseClient, err := firebase.NewApp(ctx, conf)
 	if err != nil {
@@ -102,7 +102,7 @@ type Updater struct {
 	bucket          *storage.BucketHandle
 	firestoreClient *firestore.Client
 	httpClient      *http.Client
-	imageClient     *bing_image.Client
+	imageClient     *bing.Client
 	translateClient *translate.Client
 }
 

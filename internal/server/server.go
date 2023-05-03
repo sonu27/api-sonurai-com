@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"api/internal/middleware"
 	"api/internal/store"
-
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	rscors "github.com/rs/cors"
 )
 
@@ -38,8 +38,9 @@ func New(port string, store store.Storer) http.Server {
 	})
 
 	return http.Server{
-		Addr:    ":" + port,
-		Handler: r,
+		Addr:        ":" + port,
+		Handler:     r,
+		ReadTimeout: time.Second * 10,
 	}
 }
 

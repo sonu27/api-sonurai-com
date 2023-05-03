@@ -43,6 +43,10 @@ func (c *Client) Get(ctx context.Context, ID string) (*image.Image, error) {
 		return nil, err
 	}
 
+	if result.Tags == nil {
+		result.Tags = make(map[string]float32)
+	}
+
 	return &result, nil
 }
 

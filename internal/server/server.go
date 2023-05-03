@@ -6,11 +6,11 @@ import (
 	"api/public"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	rscors "github.com/rs/cors"
 	"net/http"
 	"strconv"
-
-	"github.com/go-chi/chi"
-	rscors "github.com/rs/cors"
+	"time"
 )
 
 func New(port string, store store.Storer) http.Server {
@@ -49,8 +49,9 @@ func New(port string, store store.Storer) http.Server {
 	})
 
 	return http.Server{
-		Addr:    ":" + port,
-		Handler: r,
+		Addr:        ":" + port,
+		Handler:     r,
+		ReadTimeout: time.Second * 10,
 	}
 }
 

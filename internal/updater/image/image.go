@@ -8,16 +8,16 @@ import (
 
 type Image struct {
 	ID        string `json:"id"`
-	Title     string `json:"title"`
-	Copyright string `json:"copyright"`
-	Date      int    `json:"date"`
-	Filename  string `json:"filename"`
-	Market    string `json:"market"`
-	FullDesc  string `json:"fullDesc"`
-	URL       string `json:"url"`
-	ThumbURL  string `json:"thumbUrl"`
+	Title     string `json:"title,omitempty"`
+	Copyright string `json:"copyright,omitempty"`
+	Date      int    `json:"date,omitempty"`
+	Filename  string `json:"filename,omitempty"`
+	Market    string `json:"market,omitempty"`
+	FullDesc  string `json:"fullDesc,omitempty"`
+	URL       string `json:"url,omitempty"`
+	ThumbURL  string `json:"thumbUrl,omitempty"`
 
-	Tags map[string]float32 `json:"tags"`
+	Tags map[string]float32 `json:"tags,omitempty"`
 }
 
 func From(bw bing_image.Image, market string, bingURL string) (Image, error) {

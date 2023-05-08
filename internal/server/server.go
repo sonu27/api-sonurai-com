@@ -42,7 +42,7 @@ func New(port string, store store.Storer) http.Server {
 		r.Get("/{id}", s.GetWallpaperViewHandler)
 	})
 	r.Route("/wallpapers", func(r chi.Router) {
-		r.Use(middleware.JSONHeaders)
+		r.Use(middleware.JSONContentType)
 		r.Get("/", s.ListWallpapersHandler)
 		r.Get("/tags/{tag}", s.ListWallpapersByTagHandler)
 		r.Get("/{id}", s.GetWallpaperHandler)

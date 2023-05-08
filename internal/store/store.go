@@ -146,10 +146,7 @@ func convertMapTo(in map[string]any, out any) error {
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(b, out); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal(b, out)
 }
 
 func reverse[T comparable](s []T) {

@@ -1,7 +1,7 @@
 package image
 
 import (
-	"api/internal/updater/bing_image"
+	"api/internal/updater/bing"
 	"strconv"
 	"strings"
 )
@@ -20,7 +20,7 @@ type Image struct {
 	Tags map[string]float32 `json:"tags,omitempty"`
 }
 
-func From(bw bing_image.Image, market string, bingURL string) (Image, error) {
+func From(bw bing.Image, market string, bingURL string) (Image, error) {
 	fullDesc := bw.Copyright
 	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
 	id = strings.Replace(id, "/th?id=OHR.", "", 1)

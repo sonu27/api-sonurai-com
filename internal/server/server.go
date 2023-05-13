@@ -39,6 +39,7 @@ func New(port string, store store.Storer) http.Server {
 		r.Get("/", s.ListWallpapersViewHandler)
 		r.Get("/page/{date}/{id}", s.ListWallpapersViewHandler)
 		r.Get("/tags/{tag}", s.ListWallpapersByTagViewHandler)
+		r.Get("/tags", s.TagsViewHandler)
 		r.Get("/{id}", s.GetWallpaperViewHandler)
 	})
 	r.Route("/wallpapers", func(r chi.Router) {

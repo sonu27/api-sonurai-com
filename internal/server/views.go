@@ -5,11 +5,12 @@ import (
 	"api/view"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"math"
 	"net/http"
 	"strconv"
 )
 
-func (s *server) AboutViewHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) AboutViewHandler(w http.ResponseWriter, _ *http.Request) {
 	if err := view.About.Execute(w, nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -67,6 +68,40 @@ func (s *server) ListWallpapersViewHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := view.WallpaperIndex.Execute(w, p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *server) TagsViewHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := s.store.GetTags(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	min, max := math.MaxInt64, 0
+	for _, v := range t {
+		if v > max {
+			max = v
+		}
+		if v < min {
+			min = v
+		}
+	}
+
+	tags := make(map[string]float32, len(t))
+	for k, v := range t {
+		tags[k] = float32(v-min)/float32(max-min)*4.2 + 1
+	}
+
+	type Page struct {
+		Tags map[string]float32
+	}
+
+	if err := view.Tags.Execute(w, Page{
+		Tags: tags,
+	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

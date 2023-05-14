@@ -34,6 +34,7 @@ func New(port string, store store.Storer) http.Server {
 		r.Use(middleware.JSONContentType)
 		r.Get("/", s.ListWallpapersHandler)
 		r.Get("/tags/{tag}", s.ListWallpapersByTagHandler)
+		r.Get("/tags", s.ListTagsHandler)
 		r.Get("/{id}", s.GetWallpaperHandler)
 	})
 
@@ -161,5 +162,16 @@ func (s *server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	b, _ := json.Marshal(res)
+	_, _ = w.Write(b)
+}
+
+func (s *server) ListTagsHandler(w http.ResponseWriter, r *http.Request) {
+	tags, err := s.store.GetTags(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	b, _ := json.Marshal(tags)
 	_, _ = w.Write(b)
 }

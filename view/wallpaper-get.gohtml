@@ -1,0 +1,16 @@
+{{ define "title" }}{{ .W.Title }} - Bing Wallpapers{{ end }}
+{{ define "main" }}
+  <img
+    class="img-fluid"
+    src="https://images.sonurai.com/{{ .W.ID }}.jpg"
+    width="1920"
+    height="1200"
+    alt={{ .W.Title }}
+  >
+  <h1 class="caption text-2xl text-white mx-4 md:mx-0">{{ .W.Title }}</h1>
+  <p class="text-gray-400 mx-4 md:mx-0">{{ .W.Copyright }} - {{ .W.Date}}</p>
+  <p class="mt-2 mx-4 md:mx-0">
+      {{ range $k, $v := .W.Tags }}<a href="/bingwallpapers/tags/{{ $k }}"
+                                      class="leading-10 whitespace-nowrap px-3 py-2 rounded-md bg-slate-800 text-gray-300 hover:bg-slate-700 hover:text-white">{{ $k }}</a> {{ end }}
+  </p>
+{{ end }}

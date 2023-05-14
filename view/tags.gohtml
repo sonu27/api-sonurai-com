@@ -1,0 +1,7 @@
+{{ define "title" }}Tags - Bing Wallpapers{{ end }}
+{{ define "main" }}
+  <h1 class="text-3xl mb-2 text-white mx-4 md:mx-0">Tags - Bing Wallpapers</h1>
+  {{ range $k, $v := .Tags -}}
+    <a href="/bingwallpapers/tags/{{ $k }}" class="px-2 py-1 leading-[3rem] rounded-md text-gray-300 hover:bg-slate-700 hover:text-white" style="font-size: {{ $v }}em">{{ $k }}</a>
+  {{ end -}}
+{{ end }}

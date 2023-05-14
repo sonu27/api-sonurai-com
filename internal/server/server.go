@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -133,7 +134,12 @@ func (s *server) ListWallpapersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) ListWallpapersByTagHandler(w http.ResponseWriter, r *http.Request) {
-	tag := chi.URLParam(r, "tag")
+	tag, err := url.PathUnescape(chi.URLParam(r, "tag"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var after float64 = 1
 
 	if v := r.URL.Query().Get("after"); v != "" {

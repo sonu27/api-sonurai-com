@@ -15,6 +15,7 @@ import (
 type Storer interface {
 	Get(ctx context.Context, id string) (*WallpaperWithTags, error)
 	GetByOldID(ctx context.Context, id int) (*WallpaperWithTags, error)
+	GetTags(ctx context.Context) (map[string]int, error)
 	List(ctx context.Context, q ListQuery) ([]Wallpaper, error)
 	ListByTag(ctx context.Context, tag string, after float64) ([]Wallpaper, float64, error)
 }
@@ -72,6 +73,23 @@ func (s *Store) GetByOldID(ctx context.Context, id int) (*WallpaperWithTags, err
 	}
 
 	return wallpaper, nil
+}
+
+func (s *Store) GetTags(ctx context.Context) (map[string]int, error) {
+	doc, err := s.firestore.Collection("tags").Doc("popular").Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	tags := make(map[string]int)
+	if err := convertMapTo(doc.Data(), &tags); err != nil {
+		return nil, err
+	}
+
+	return tags, nil
 }
 
 func (s *Store) List(ctx context.Context, q ListQuery) ([]Wallpaper, error) {

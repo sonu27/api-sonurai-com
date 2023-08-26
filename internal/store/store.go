@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -61,7 +62,7 @@ func (s *Store) GetByOldID(ctx context.Context, id int) (*WallpaperWithTags, err
 
 	doc, err := iter.Next()
 	if err != nil {
-		if status.Code(err) == codes.NotFound || err == iterator.Done {
+		if status.Code(err) == codes.NotFound || errors.Is(err, iterator.Done) {
 			return nil, nil
 		}
 		return nil, err

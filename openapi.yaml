@@ -5,6 +5,12 @@ info:
 servers:
   - url: https://api.sonurai.com
 paths:
+  /:
+    get:
+      operationId: getRoot
+      responses:
+        '200':
+          description: OK
   /wallpapers:
     get:
       operationId: getWallpapers
@@ -31,7 +37,7 @@ paths:
           name: prev
           required: false
           schema:
-            type: string
+            type: integer
             enum:
               - 1
       responses:
@@ -87,6 +93,12 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: after
+          required: false
+          schema:
+            type: number
+            format: double
       responses:
         '200':
           description: OK

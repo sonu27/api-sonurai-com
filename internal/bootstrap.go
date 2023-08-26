@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"api/internal/api"
+	"api/internal/handler"
 	"api/internal/server"
 	"api/internal/store"
 	"api/internal/updater"
@@ -31,8 +33,15 @@ func Bootstrap() error {
 
 	wallpaperClient := store.New(collection, firestore)
 
+	hh := handler.New(&wallpaperClient)
+	h, err := api.NewServer(hh)
+	if err != nil {
+		return err
+	}
+
 	port := os.Getenv("PORT")
-	srv := server.New(port, &wallpaperClient)
+
+	srv := server.New(port, h)
 
 	u, err := updater.New()
 	if err != nil {

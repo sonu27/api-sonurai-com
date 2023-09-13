@@ -21,11 +21,12 @@ func ToAPI(w []Wallpaper) []api.Wallpaper {
 	res := make([]api.Wallpaper, len(w))
 	for i, v := range w {
 		res[i] = api.Wallpaper{
-			ID:       api.ID(v.ID),
-			Title:    v.Title,
-			Date:     api.Date(v.Date),
-			Filename: v.Filename,
-			Market:   v.Market,
+			ID:        api.ID(v.ID),
+			Title:     v.Title,
+			Copyright: v.Copyright,
+			Date:      api.Date(v.Date),
+			Filename:  v.Filename,
+			Market:    v.Market,
 		}
 	}
 	return res

@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ogen-go/ogen/conv"
@@ -80,6 +81,8 @@ func (c *Client) GetRoot(ctx context.Context) error {
 func (c *Client) sendGetRoot(ctx context.Context) (res *GetRootOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getRoot"),
+		semconv.HTTPMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/"),
 	}
 
 	// Run stopwatch.
@@ -151,6 +154,8 @@ func (c *Client) GetWallpaper(ctx context.Context, params GetWallpaperParams) (G
 func (c *Client) sendGetWallpaper(ctx context.Context, params GetWallpaperParams) (res GetWallpaperRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getWallpaper"),
+		semconv.HTTPMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/wallpapers/{id}"),
 	}
 
 	// Run stopwatch.
@@ -243,6 +248,8 @@ func (c *Client) GetWallpaperTags(ctx context.Context) (GetWallpaperTagsRes, err
 func (c *Client) sendGetWallpaperTags(ctx context.Context) (res GetWallpaperTagsRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getWallpaperTags"),
+		semconv.HTTPMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/wallpapers/tags"),
 	}
 
 	// Run stopwatch.
@@ -314,6 +321,8 @@ func (c *Client) GetWallpapers(ctx context.Context, params GetWallpapersParams) 
 func (c *Client) sendGetWallpapers(ctx context.Context, params GetWallpapersParams) (res GetWallpapersRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getWallpapers"),
+		semconv.HTTPMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/wallpapers"),
 	}
 
 	// Run stopwatch.
@@ -463,6 +472,8 @@ func (c *Client) GetWallpapersByTag(ctx context.Context, params GetWallpapersByT
 func (c *Client) sendGetWallpapersByTag(ctx context.Context, params GetWallpapersByTagParams) (res GetWallpapersByTagRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getWallpapersByTag"),
+		semconv.HTTPMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/wallpapers/tags/{tag}"),
 	}
 
 	// Run stopwatch.

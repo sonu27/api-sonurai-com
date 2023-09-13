@@ -46,6 +46,13 @@ const (
 	GetWallpapersPrev1 GetWallpapersPrev = 1
 )
 
+// AllValues returns all GetWallpapersPrev values.
+func (GetWallpapersPrev) AllValues() []GetWallpapersPrev {
+	return []GetWallpapersPrev{
+		GetWallpapersPrev1,
+	}
+}
+
 type ID string
 
 // Ref: #/components/schemas/Links

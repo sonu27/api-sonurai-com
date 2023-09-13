@@ -30,6 +30,7 @@ func encodeGetWallpaperResponse(response GetWallpaperRes, w http.ResponseWriter,
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
 		return nil
 
 	case *GetWallpaperNotFound:
@@ -55,6 +56,7 @@ func encodeGetWallpaperTagsResponse(response GetWallpaperTagsRes, w http.Respons
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
 		return nil
 
 	case *GetWallpaperTagsNotFound:
@@ -80,6 +82,7 @@ func encodeGetWallpapersResponse(response GetWallpapersRes, w http.ResponseWrite
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
 		return nil
 
 	case *GetWallpapersNotFound:
@@ -105,6 +108,7 @@ func encodeGetWallpapersByTagResponse(response GetWallpapersByTagRes, w http.Res
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
 		return nil
 
 	case *GetWallpapersByTagNotFound:

@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -172,6 +173,23 @@ func (u *Updater) Update(ctx context.Context) error {
 			image.Tags[strings.ToLower(v.Description)] = v.Score
 		}
 
+		// start: duplicate tags to t
+		tmp := make([]tag, 0, len(image.Tags))
+		for k, v := range image.Tags {
+			tmp = append(tmp, tag{Name: k, Score: v})
+		}
+
+		// sort by score
+		sort.SliceStable(tmp, func(i, j int) bool {
+			return tmp[i].Score > tmp[j].Score
+		})
+
+		image.TagsOrdered = make([]string, 0, len(tmp))
+		for _, v := range tmp {
+			image.TagsOrdered = append(image.TagsOrdered, strings.ReplaceAll(v.Name, " ", "-"))
+		}
+		// end: duplicate tags to t
+
 		_, err = u.firestoreClient.Upsert(ctx, image)
 		if err != nil {
 			return err
@@ -279,4 +297,9 @@ func (u *Updater) translateText(ctx context.Context, text string) (string, error
 	}
 
 	return resp[0].Text, nil
+}
+
+type tag struct {
+	Name  string
+	Score float32
 }

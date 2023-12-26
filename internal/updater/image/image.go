@@ -17,7 +17,8 @@ type Image struct {
 	URL       string `json:"url,omitempty"`
 	ThumbURL  string `json:"thumbUrl,omitempty"`
 
-	Tags map[string]float32 `json:"tags,omitempty"`
+	Tags        map[string]float32 `json:"tags,omitempty"`
+	TagsOrdered []string           `json:"tagsOrdered,omitempty"`
 }
 
 func From(bw bing.Image, market string, bingURL string) (Image, error) {

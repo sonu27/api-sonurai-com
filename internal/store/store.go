@@ -39,6 +39,21 @@ type Store struct {
 	firestore  *firestore.Client
 }
 
+func (s *Store) GetAll(ctx context.Context) ([]map[string]any, error) {
+	iter := s.firestore.Collection(s.collection).Documents(ctx)
+	dsnap, err := iter.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	wallpapers := make([]map[string]any, 0, len(dsnap))
+	for _, v := range dsnap {
+		wallpapers = append(wallpapers, v.Data())
+	}
+
+	return wallpapers, nil
+}
+
 func (s *Store) Get(ctx context.Context, id string) (*WallpaperWithTags, error) {
 	doc, err := s.firestore.Collection(s.collection).Doc(id).Get(ctx)
 	if err != nil {

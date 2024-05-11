@@ -21,11 +21,11 @@ func encodeGetRootResponse(response *GetRootOK, w http.ResponseWriter, span trac
 func encodeGetWallpaperResponse(response GetWallpaperRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *WallpaperWithTags:
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
 
-		e := jx.GetEncoder()
+		e := new(jx.Encoder)
 		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
@@ -47,11 +47,11 @@ func encodeGetWallpaperResponse(response GetWallpaperRes, w http.ResponseWriter,
 func encodeGetWallpaperTagsResponse(response GetWallpaperTagsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *GetWallpaperTagsOK:
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
 
-		e := jx.GetEncoder()
+		e := new(jx.Encoder)
 		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
@@ -73,11 +73,11 @@ func encodeGetWallpaperTagsResponse(response GetWallpaperTagsRes, w http.Respons
 func encodeGetWallpapersResponse(response GetWallpapersRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *WallpaperList:
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
 
-		e := jx.GetEncoder()
+		e := new(jx.Encoder)
 		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
@@ -99,11 +99,11 @@ func encodeGetWallpapersResponse(response GetWallpapersRes, w http.ResponseWrite
 func encodeGetWallpapersByTagResponse(response GetWallpapersByTagRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *WallpaperList:
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
 
-		e := jx.GetEncoder()
+		e := new(jx.Encoder)
 		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")

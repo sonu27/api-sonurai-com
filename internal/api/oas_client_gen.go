@@ -21,6 +21,38 @@ import (
 	"github.com/ogen-go/ogen/uri"
 )
 
+// Invoker invokes operations described by OpenAPI v3 specification.
+type Invoker interface {
+	// GetRoot invokes getRoot operation.
+	//
+	// GET /
+	GetRoot(ctx context.Context) error
+	// GetWallpaper invokes getWallpaper operation.
+	//
+	// Returns a wallpaper with the given ID.
+	//
+	// GET /wallpapers/{id}
+	GetWallpaper(ctx context.Context, params GetWallpaperParams) (GetWallpaperRes, error)
+	// GetWallpaperTags invokes getWallpaperTags operation.
+	//
+	// Returns a list of tags.
+	//
+	// GET /wallpapers/tags
+	GetWallpaperTags(ctx context.Context) (GetWallpaperTagsRes, error)
+	// GetWallpapers invokes getWallpapers operation.
+	//
+	// Returns a list of wallpapers.
+	//
+	// GET /wallpapers
+	GetWallpapers(ctx context.Context, params GetWallpapersParams) (GetWallpapersRes, error)
+	// GetWallpapersByTag invokes getWallpapersByTag operation.
+	//
+	// Returns a list of wallpapers with the given tag.
+	//
+	// GET /wallpapers/tags/{tag}
+	GetWallpapersByTag(ctx context.Context, params GetWallpapersByTagParams) (GetWallpapersByTagRes, error)
+}
+
 // Client implements OAS client.
 type Client struct {
 	serverURL *url.URL
@@ -73,8 +105,7 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 //
 // GET /
 func (c *Client) GetRoot(ctx context.Context) error {
-	res, err := c.sendGetRoot(ctx)
-	_ = res
+	_, err := c.sendGetRoot(ctx)
 	return err
 }
 
@@ -147,7 +178,6 @@ func (c *Client) sendGetRoot(ctx context.Context) (res *GetRootOK, err error) {
 // GET /wallpapers/{id}
 func (c *Client) GetWallpaper(ctx context.Context, params GetWallpaperParams) (GetWallpaperRes, error) {
 	res, err := c.sendGetWallpaper(ctx, params)
-	_ = res
 	return res, err
 }
 
@@ -241,7 +271,6 @@ func (c *Client) sendGetWallpaper(ctx context.Context, params GetWallpaperParams
 // GET /wallpapers/tags
 func (c *Client) GetWallpaperTags(ctx context.Context) (GetWallpaperTagsRes, error) {
 	res, err := c.sendGetWallpaperTags(ctx)
-	_ = res
 	return res, err
 }
 
@@ -314,7 +343,6 @@ func (c *Client) sendGetWallpaperTags(ctx context.Context) (res GetWallpaperTags
 // GET /wallpapers
 func (c *Client) GetWallpapers(ctx context.Context, params GetWallpapersParams) (GetWallpapersRes, error) {
 	res, err := c.sendGetWallpapers(ctx, params)
-	_ = res
 	return res, err
 }
 
@@ -465,7 +493,6 @@ func (c *Client) sendGetWallpapers(ctx context.Context, params GetWallpapersPara
 // GET /wallpapers/tags/{tag}
 func (c *Client) GetWallpapersByTag(ctx context.Context, params GetWallpapersByTagParams) (GetWallpapersByTagRes, error) {
 	res, err := c.sendGetWallpapersByTag(ctx, params)
-	_ = res
 	return res, err
 }
 

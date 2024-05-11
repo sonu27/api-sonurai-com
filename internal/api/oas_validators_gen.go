@@ -37,6 +37,10 @@ func (s GetWallpapersPrev) Validate() error {
 }
 
 func (s *Wallpaper) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
 	var failures []validate.FieldError
 	if err := func() error {
 		if err := s.Date.Validate(); err != nil {
@@ -56,6 +60,10 @@ func (s *Wallpaper) Validate() error {
 }
 
 func (s *WallpaperList) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
 	var failures []validate.FieldError
 	if err := func() error {
 		if s.Data == nil {
@@ -92,6 +100,10 @@ func (s *WallpaperList) Validate() error {
 }
 
 func (s *WallpaperWithTags) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
 	var failures []validate.FieldError
 	if err := func() error {
 		if err := s.Date.Validate(); err != nil {

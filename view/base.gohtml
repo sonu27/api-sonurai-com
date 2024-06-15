@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ template "title" . }} - Sonu Rai</title>
+  <title>{{ template "title" . }} | Sonu Rai</title>
   <meta name="theme-color" content="#111827"/>
   <link rel="stylesheet" href="/main.css">
   <link rel="icon" href="/favicon.ico"/>
   <link rel="apple-touch-icon" href="/logo192.png"/>
   <link rel="manifest" href="/manifest.json"/>
+  <meta name="og:title" content="{{ template "title" . }} | Sonu Rai"/>
   <meta name="twitter:site" content="@sonu27"/>
   <meta name="twitter:creator" content="@sonu27"/>
 </head>
@@ -17,14 +18,14 @@
   <a href="/bingwallpapers" class="text-xl text-white">
     Sonu Rai
   </a>
-  <a href="/bingwallpapers" class="ml-4 text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md">
+  <a href="/about" class="ml-4 text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md">
+    About
+  </a>
+  <a href="/bingwallpapers" class="text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md">
     Wallpapers
   </a>
-  <a href="/bingwallpapers/tags" class=" text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md">
+  <a href="/bingwallpapers/tags" class="text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md">
     Tags
-  </a>
-  <a href="/about" class="text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md">
-    About
   </a>
 </nav>
 {{ template "main" . }}

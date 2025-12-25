@@ -37,11 +37,12 @@ func Start(
 
 	fmt.Println("image updater listening")
 	return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		msg.Ack()
-		err := fn(ctx)
-		if err != nil {
-			fmt.Println(err)
+		if err := fn(ctx); err != nil {
+			fmt.Printf("message processing failed: %v\n", err)
+			msg.Nack()
+			return
 		}
+		msg.Ack()
 	})
 }
 

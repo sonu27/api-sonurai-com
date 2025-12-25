@@ -1,18 +1,20 @@
 package internal
 
 import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	firebase "firebase.google.com/go"
+
 	"api/internal/api"
 	"api/internal/handler"
 	"api/internal/server"
 	"api/internal/store"
 	"api/internal/updater"
 	"api/internal/updater/pubsub"
-	"context"
-	firebase "firebase.google.com/go"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 const collection = "BingWallpapers"
@@ -48,21 +50,17 @@ func Bootstrap() error {
 		return err
 	}
 
-	errs := make(chan error, 1)
+	errs := make(chan error, 2)
 	go func() {
-		err := pubsub.Start(ctx, os.Getenv("PROJECT_ID"), updater.TopicID, updater.SubID, u.Update)
-		if err != nil {
+		if err := pubsub.Start(ctx, os.Getenv("PROJECT_ID"), updater.TopicID, updater.SubID, u.Update); err != nil {
 			errs <- err
 		}
-		close(errs)
 	}()
 	go func() {
 		log.Printf("server started on http://localhost:%s", port)
-		err := srv.ListenAndServe()
-		if err != nil {
+		if err := srv.ListenAndServe(); err != nil {
 			errs <- err
 		}
-		close(errs)
 	}()
 
 	exit := make(chan os.Signal, 1)
@@ -70,10 +68,12 @@ func Bootstrap() error {
 
 	select {
 	case err := <-errs:
+		// Attempt graceful shutdown on error
+		_ = srv.Shutdown(ctx)
 		return err
 	case <-exit:
-		err := srv.Shutdown(ctx)
-		if err != nil {
+		log.Println("shutdown signal received")
+		if err := srv.Shutdown(ctx); err != nil {
 			return err
 		}
 		log.Println("server stopped")

@@ -19,8 +19,10 @@ func New(port string, h http.Handler) http.Server {
 	})
 
 	return http.Server{
-		Addr:        ":" + port,
-		Handler:     cors.Handler(h),
-		ReadTimeout: time.Second * 10,
+		Addr:         ":" + port,
+		Handler:      cors.Handler(h),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 }

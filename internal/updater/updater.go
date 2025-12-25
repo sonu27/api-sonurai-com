@@ -222,12 +222,20 @@ func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.Ent
 	}
 	images, err := u.annoClient.BatchAnnotateImages(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("vision API call failed: %w", err)
 	}
 
-	annotations := images.GetResponses()[0].GetLabelAnnotations()
+	responses := images.GetResponses()
+	if len(responses) == 0 {
+		return nil, fmt.Errorf("vision API returned no responses for %s", url)
+	}
 
-	return annotations, nil
+	resp := responses[0]
+	if resp.GetError() != nil {
+		return nil, fmt.Errorf("vision API error for %s: %s", url, resp.GetError().GetMessage())
+	}
+
+	return resp.GetLabelAnnotations(), nil
 }
 
 func (u *Updater) downloadFile(ctx context.Context, url string, name string) error {

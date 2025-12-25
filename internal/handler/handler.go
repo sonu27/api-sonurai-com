@@ -1,11 +1,20 @@
 package handler
 
 import (
-	"api/internal/api"
-	"api/internal/store"
 	"context"
 	"fmt"
 	"strconv"
+
+	"api/internal/api"
+	"api/internal/store"
+)
+
+const (
+	// DefaultPageSize is the default number of wallpapers returned per page.
+	DefaultPageSize = 24
+
+	// MaxTagScore is the maximum Vision API confidence score (used as initial cursor).
+	MaxTagScore = 1.0
 )
 
 type Handler struct {
@@ -62,7 +71,7 @@ func (h Handler) GetWallpaperTags(ctx context.Context) (api.GetWallpaperTagsRes,
 }
 
 func (h Handler) GetWallpapers(ctx context.Context, p api.GetWallpapersParams) (api.GetWallpapersRes, error) {
-	q := store.ListQuery{Limit: 24}
+	q := store.ListQuery{Limit: DefaultPageSize}
 
 	q.Reverse = p.Prev.Set
 
@@ -104,7 +113,7 @@ func (h Handler) GetWallpapers(ctx context.Context, p api.GetWallpapersParams) (
 }
 
 func (h Handler) GetWallpapersByTag(ctx context.Context, p api.GetWallpapersByTagParams) (api.GetWallpapersByTagRes, error) {
-	var after float64 = 1
+	after := MaxTagScore
 	if p.After.Set {
 		after = p.After.Value
 	}
@@ -122,7 +131,7 @@ func (h Handler) GetWallpapersByTag(ctx context.Context, p api.GetWallpapersByTa
 		Data: store.ToAPI(wallpapers),
 	}
 
-	if len(wallpapers) == 36 && next > 0 {
+	if len(wallpapers) == store.TagPageSize && next > 0 {
 		res.Links = api.Links{Next: api.NewOptString(fmt.Sprintf("/wallpapers/tags/%s?after=%.16f", p.Tag, next))}
 	}
 

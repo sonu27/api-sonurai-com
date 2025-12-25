@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-
 	"github.com/ogen-go/ogen/validate"
 )
 
@@ -296,15 +295,26 @@ func (s *Wallpaper) encodeFields(e *jx.Encoder) {
 		e.FieldStart("market")
 		e.Str(s.Market)
 	}
+	{
+		if s.Colors != nil {
+			e.FieldStart("colors")
+			e.ArrStart()
+			for _, elem := range s.Colors {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
 }
 
-var jsonFieldsNameOfWallpaper = [6]string{
+var jsonFieldsNameOfWallpaper = [7]string{
 	0: "id",
 	1: "title",
 	2: "copyright",
 	3: "date",
 	4: "filename",
 	5: "market",
+	6: "colors",
 }
 
 // Decode decodes Wallpaper from json.
@@ -383,6 +393,25 @@ func (s *Wallpaper) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"market\"")
+			}
+		case "colors":
+			if err := func() error {
+				s.Colors = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Colors = append(s.Colors, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"colors\"")
 			}
 		default:
 			return d.Skip()
@@ -595,19 +624,30 @@ func (s *WallpaperWithTags) encodeFields(e *jx.Encoder) {
 		e.Str(s.Market)
 	}
 	{
+		if s.Colors != nil {
+			e.FieldStart("colors")
+			e.ArrStart()
+			for _, elem := range s.Colors {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
 		e.FieldStart("tags")
 		s.Tags.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfWallpaperWithTags = [7]string{
+var jsonFieldsNameOfWallpaperWithTags = [8]string{
 	0: "id",
 	1: "title",
 	2: "copyright",
 	3: "date",
 	4: "filename",
 	5: "market",
-	6: "tags",
+	6: "colors",
+	7: "tags",
 }
 
 // Decode decodes WallpaperWithTags from json.
@@ -687,8 +727,27 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"market\"")
 			}
+		case "colors":
+			if err := func() error {
+				s.Colors = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Colors = append(s.Colors, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"colors\"")
+			}
 		case "tags":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.Tags.Decode(d); err != nil {
 					return err
@@ -707,7 +766,7 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b10111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

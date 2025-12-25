@@ -13,7 +13,7 @@ import (
 
 	"api/internal/updater/bing"
 	"api/internal/updater/firestore"
-	"api/internal/updater/image"
+	imgpkg "api/internal/updater/image"
 	"cloud.google.com/go/storage"
 	"cloud.google.com/go/translate"
 	"cloud.google.com/go/vision/v2/apiv1"
@@ -114,7 +114,7 @@ func (u *Updater) Update(ctx context.Context) error {
 	fmt.Println("updating images")
 
 	var updatedImages []string
-	images := make(map[string]image.Image)
+	images := make(map[string]imgpkg.Image)
 
 	if err := u.fetchAndDedupeImages(ctx, append(ENMarkets, nonENMarkets...), images); err != nil {
 		return err
@@ -167,12 +167,13 @@ func (u *Updater) Update(ctx context.Context) error {
 			}
 		}
 
-		anno, err := u.detectLabels(ctx, image.Filename+".jpg")
+		anno, err := u.annotateImage(ctx, image.Filename+".jpg")
 		if err != nil {
 			return err
 		}
 
-		for _, v := range anno {
+		// Process label annotations
+		for _, v := range anno.GetLabelAnnotations() {
 			image.Tags[strings.ToLower(v.Description)] = v.Score
 		}
 
@@ -193,6 +194,21 @@ func (u *Updater) Update(ctx context.Context) error {
 		}
 		// end: duplicate tags to t
 
+		// Extract up to 4 dominant colors as RGB values
+		if props := anno.GetImagePropertiesAnnotation(); props != nil {
+			if dc := props.GetDominantColors(); dc != nil {
+				colors := dc.GetColors()
+				for i := range min(4, len(colors)) {
+					c := colors[i].GetColor()
+					image.Colors = append(image.Colors, imgpkg.RGB{
+						int(c.GetRed()),
+						int(c.GetGreen()),
+						int(c.GetBlue()),
+					})
+				}
+			}
+		}
+
 		_, err = u.firestoreClient.Upsert(ctx, image)
 		if err != nil {
 			return err
@@ -204,7 +220,7 @@ func (u *Updater) Update(ctx context.Context) error {
 	return nil
 }
 
-func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.EntityAnnotation, error) {
+func (u *Updater) annotateImage(ctx context.Context, url string) (*visionpb.AnnotateImageResponse, error) {
 	url = fmt.Sprintf("gs://%s/%s", bucketName, url)
 	req := &visionpb.BatchAnnotateImagesRequest{
 		Requests: []*visionpb.AnnotateImageRequest{
@@ -218,6 +234,10 @@ func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.Ent
 					{
 						Type:       visionpb.Feature_LABEL_DETECTION,
 						MaxResults: 50,
+					},
+					{
+						Type:       visionpb.Feature_IMAGE_PROPERTIES,
+						MaxResults: 4,
 					},
 				},
 			},
@@ -238,7 +258,7 @@ func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.Ent
 		return nil, fmt.Errorf("vision API error for %s: %s", url, resp.GetError().GetMessage())
 	}
 
-	return resp.GetLabelAnnotations(), nil
+	return resp, nil
 }
 
 func (u *Updater) downloadFile(ctx context.Context, url string, name string) error {
@@ -271,7 +291,7 @@ func (u *Updater) downloadFile(ctx context.Context, url string, name string) err
 	return nil
 }
 
-func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, out map[string]image.Image) error {
+func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, out map[string]imgpkg.Image) error {
 	for _, market := range markets {
 		bi, err := u.imageClient.List(ctx, market)
 		if err != nil {
@@ -279,7 +299,7 @@ func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, ou
 		}
 
 		for _, v := range bi {
-			image, err := image.From(v, market, bingURL)
+			image, err := imgpkg.From(v, market, bingURL)
 			if err != nil {
 				return err
 			}

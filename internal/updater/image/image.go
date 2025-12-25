@@ -8,6 +8,14 @@ import (
 	"api/internal/updater/bing"
 )
 
+// RGB represents a color as [R, G, B] values (0-255).
+type RGB [3]int
+
+// ToHex returns the color as a hex string (e.g., "#4A90D9").
+func (c RGB) ToHex() string {
+	return fmt.Sprintf("#%02X%02X%02X", c[0], c[1], c[2])
+}
+
 type Image struct {
 	ID        string `json:"id" firestore:"id"`
 	Title     string `json:"title,omitempty" firestore:"title,omitempty"`
@@ -21,6 +29,7 @@ type Image struct {
 
 	Tags        map[string]float32 `json:"tags,omitempty" firestore:"tags,omitempty"`
 	TagsOrdered []string           `json:"tagsOrdered,omitempty" firestore:"tagsOrdered,omitempty"`
+	Colors      []RGB              `json:"colors,omitempty" firestore:"colors,omitempty"`
 }
 
 func From(bw bing.Image, market string, bingURL string) (Image, error) {

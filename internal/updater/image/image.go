@@ -29,7 +29,7 @@ type Image struct {
 
 	Tags        map[string]float32 `json:"tags,omitempty" firestore:"tags,omitempty"`
 	TagsOrdered []string           `json:"tagsOrdered,omitempty" firestore:"tagsOrdered,omitempty"`
-	Colors      []RGB              `json:"colors,omitempty" firestore:"colors,omitempty"`
+	Colors      []string           `json:"colors,omitempty" firestore:"colors,omitempty"` // Hex strings like "#4A90D9"
 }
 
 func From(bw bing.Image, market string, bingURL string) (Image, error) {

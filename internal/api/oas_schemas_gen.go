@@ -365,6 +365,8 @@ type Wallpaper struct {
 	Date      Date   `json:"date"`
 	Filename  string `json:"filename"`
 	Market    string `json:"market"`
+	// Dominant colors as hex strings (e.g., "#4A90D9").
+	Colors []string `json:"colors"`
 }
 
 // GetID returns the value of ID.
@@ -397,6 +399,11 @@ func (s *Wallpaper) GetMarket() string {
 	return s.Market
 }
 
+// GetColors returns the value of Colors.
+func (s *Wallpaper) GetColors() []string {
+	return s.Colors
+}
+
 // SetID sets the value of ID.
 func (s *Wallpaper) SetID(val ID) {
 	s.ID = val
@@ -425,6 +432,11 @@ func (s *Wallpaper) SetFilename(val string) {
 // SetMarket sets the value of Market.
 func (s *Wallpaper) SetMarket(val string) {
 	s.Market = val
+}
+
+// SetColors sets the value of Colors.
+func (s *Wallpaper) SetColors(val []string) {
+	s.Colors = val
 }
 
 // Ref: #/components/schemas/WallpaperList
@@ -459,13 +471,15 @@ func (*WallpaperList) getWallpapersRes()      {}
 // Merged schema.
 // Ref: #/components/schemas/WallpaperWithTags
 type WallpaperWithTags struct {
-	ID        ID                    `json:"id"`
-	Title     string                `json:"title"`
-	Copyright string                `json:"copyright"`
-	Date      Date                  `json:"date"`
-	Filename  string                `json:"filename"`
-	Market    string                `json:"market"`
-	Tags      WallpaperWithTagsTags `json:"tags"`
+	ID        ID     `json:"id"`
+	Title     string `json:"title"`
+	Copyright string `json:"copyright"`
+	Date      Date   `json:"date"`
+	Filename  string `json:"filename"`
+	Market    string `json:"market"`
+	// Dominant colors as hex strings (e.g., "#4A90D9").
+	Colors []string              `json:"colors"`
+	Tags   WallpaperWithTagsTags `json:"tags"`
 }
 
 // GetID returns the value of ID.
@@ -496,6 +510,11 @@ func (s *WallpaperWithTags) GetFilename() string {
 // GetMarket returns the value of Market.
 func (s *WallpaperWithTags) GetMarket() string {
 	return s.Market
+}
+
+// GetColors returns the value of Colors.
+func (s *WallpaperWithTags) GetColors() []string {
+	return s.Colors
 }
 
 // GetTags returns the value of Tags.
@@ -531,6 +550,11 @@ func (s *WallpaperWithTags) SetFilename(val string) {
 // SetMarket sets the value of Market.
 func (s *WallpaperWithTags) SetMarket(val string) {
 	s.Market = val
+}
+
+// SetColors sets the value of Colors.
+func (s *WallpaperWithTags) SetColors(val []string) {
+	s.Colors = val
 }
 
 // SetTags sets the value of Tags.

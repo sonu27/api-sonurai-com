@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"github.com/go-faster/errors"
-
 	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/middleware"
 	"github.com/ogen-go/ogen/ogenerrors"
@@ -89,10 +88,10 @@ func decodeGetWallpaperParams(args [1]string, argsEscaped bool, r *http.Request)
 
 // GetWallpapersParams is parameters of getWallpapers operation.
 type GetWallpapersParams struct {
-	Limit          OptInt
-	StartAfterDate OptDate
-	StartAfterID   OptID
-	Prev           OptGetWallpapersPrev
+	Limit          OptInt               `json:",omitempty,omitzero"`
+	StartAfterDate OptDate              `json:",omitempty,omitzero"`
+	StartAfterID   OptID                `json:",omitempty,omitzero"`
+	Prev           OptGetWallpapersPrev `json:",omitempty,omitzero"`
 }
 
 func unpackGetWallpapersParams(packed middleware.Parameters) (params GetWallpapersParams) {
@@ -181,6 +180,7 @@ func decodeGetWallpapersParams(args [0]string, argsEscaped bool, r *http.Request
 							MaxExclusive:  false,
 							MultipleOfSet: false,
 							MultipleOf:    0,
+							Pattern:       nil,
 						}).Validate(int64(value)); err != nil {
 							return errors.Wrap(err, "int")
 						}
@@ -375,7 +375,7 @@ func decodeGetWallpapersParams(args [0]string, argsEscaped bool, r *http.Request
 // GetWallpapersByTagParams is parameters of getWallpapersByTag operation.
 type GetWallpapersByTagParams struct {
 	Tag   string
-	After OptFloat64
+	After OptFloat64 `json:",omitempty,omitzero"`
 }
 
 func unpackGetWallpapersByTagParams(packed middleware.Parameters) (params GetWallpapersByTagParams) {

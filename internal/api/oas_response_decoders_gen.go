@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/ogen-go/ogen/validate"
 )
@@ -20,7 +19,7 @@ func decodeGetRootResponse(resp *http.Response) (res *GetRootOK, _ error) {
 		// Code 200.
 		return &GetRootOK{}, nil
 	}
-	return res, validate.UnexpectedStatusCode(resp.StatusCode)
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
 func decodeGetWallpaperResponse(resp *http.Response) (res GetWallpaperRes, _ error) {
@@ -73,7 +72,7 @@ func decodeGetWallpaperResponse(resp *http.Response) (res GetWallpaperRes, _ err
 		// Code 404.
 		return &GetWallpaperNotFound{}, nil
 	}
-	return res, validate.UnexpectedStatusCode(resp.StatusCode)
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
 func decodeGetWallpaperTagsResponse(resp *http.Response) (res GetWallpaperTagsRes, _ error) {
@@ -117,7 +116,7 @@ func decodeGetWallpaperTagsResponse(resp *http.Response) (res GetWallpaperTagsRe
 		// Code 404.
 		return &GetWallpaperTagsNotFound{}, nil
 	}
-	return res, validate.UnexpectedStatusCode(resp.StatusCode)
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
 func decodeGetWallpapersResponse(resp *http.Response) (res GetWallpapersRes, _ error) {
@@ -170,7 +169,7 @@ func decodeGetWallpapersResponse(resp *http.Response) (res GetWallpapersRes, _ e
 		// Code 404.
 		return &GetWallpapersNotFound{}, nil
 	}
-	return res, validate.UnexpectedStatusCode(resp.StatusCode)
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
 func decodeGetWallpapersByTagResponse(resp *http.Response) (res GetWallpapersByTagRes, _ error) {
@@ -223,5 +222,5 @@ func decodeGetWallpapersByTagResponse(resp *http.Response) (res GetWallpapersByT
 		// Code 404.
 		return &GetWallpapersByTagNotFound{}, nil
 	}
-	return res, validate.UnexpectedStatusCode(resp.StatusCode)
+	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }

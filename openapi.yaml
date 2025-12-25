@@ -138,6 +138,11 @@ components:
           type: string
         market:
           type: string
+        colors:
+          type: array
+          items:
+            type: string
+          description: Dominant colors as hex strings (e.g., "#4A90D9")
       required:
         - id
         - title

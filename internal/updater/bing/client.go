@@ -3,9 +3,8 @@ package bing
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
-
-	"google.golang.org/appengine/log"
 )
 
 type ListResponse struct {
@@ -28,7 +27,7 @@ type Client struct {
 	HC      *http.Client
 }
 
-func (c *Client) List(ctx context.Context, market string) ([]Image, error) {
+func (c *Client) List(_ context.Context, market string) ([]Image, error) {
 	resp, err := c.HC.Get(c.BaseURL + "/HPImageArchive.aspx?format=js&n=8&mbl=1&mkt=" + market)
 	if err != nil {
 		return nil, err
@@ -41,7 +40,7 @@ func (c *Client) List(ctx context.Context, market string) ([]Image, error) {
 	}
 
 	if market != lr.Market.Market {
-		log.Warningf(ctx, "market mismatch: %s, %s", market, lr.Market.Market)
+		log.Printf("warning: market mismatch: requested %s, got %s", market, lr.Market.Market)
 	}
 
 	return lr.Images, nil

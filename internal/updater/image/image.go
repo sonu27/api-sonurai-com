@@ -1,9 +1,11 @@
 package image
 
 import (
-	"api/internal/updater/bing"
+	"fmt"
 	"strconv"
 	"strings"
+
+	"api/internal/updater/bing"
 )
 
 type Image struct {
@@ -32,23 +34,9 @@ func From(bw bing.Image, market string, bingURL string) (Image, error) {
 		return Image{}, err
 	}
 
-	var copyright string
-	var title string
-
-	if a := strings.Split(bw.Copyright, "（©"); len(a) == 2 {
-		// chinese chars
-		title = a[0]
-		copyright = "© " + a[1]
-		copyright = strings.Replace(copyright, "）", "", 1)
-	} else if a := strings.Split(bw.Copyright, "(©"); len(a) == 2 {
-		title = a[0]
-		copyright = "© " + a[1]
-		copyright = strings.Replace(copyright, ")", "", 1)
-	} else {
-		a := strings.Split(bw.Copyright, "©")
-		title = a[0]
-		copyright = "© " + a[1]
-		copyright = strings.Replace(copyright, ")", "", 1)
+	title, copyright, err := parseCopyright(bw.Copyright)
+	if err != nil {
+		return Image{}, err
 	}
 
 	title = strings.TrimSpace(title)
@@ -68,4 +56,36 @@ func From(bw bing.Image, market string, bingURL string) (Image, error) {
 	}
 
 	return image, nil
+}
+
+// parseCopyright extracts the title and copyright from Bing's copyright string.
+// Bing formats: "Title (© Attribution)" or "Title（© Attribution）" (Chinese)
+func parseCopyright(raw string) (title, copyright string, err error) {
+	// Try Chinese fullwidth parentheses first: （©
+	if parts := strings.Split(raw, "（©"); len(parts) == 2 {
+		title = parts[0]
+		copyright = "© " + strings.TrimSuffix(parts[1], "）")
+		return title, copyright, nil
+	}
+
+	// Try standard parentheses: (©
+	if parts := strings.Split(raw, "(©"); len(parts) == 2 {
+		title = parts[0]
+		copyright = "© " + strings.TrimSuffix(parts[1], ")")
+		return title, copyright, nil
+	}
+
+	// Try just © symbol
+	if parts := strings.Split(raw, "©"); len(parts) == 2 {
+		title = parts[0]
+		copyright = "© " + strings.TrimSuffix(parts[1], ")")
+		return title, copyright, nil
+	}
+
+	// No copyright symbol found - use the whole string as title
+	if raw != "" {
+		return raw, "", nil
+	}
+
+	return "", "", fmt.Errorf("unable to parse copyright from empty string")
 }

@@ -1,6 +1,15 @@
 package updater
 
 import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"sort"
+	"strings"
+	"time"
+
 	"api/internal/updater/bing"
 	"api/internal/updater/firestore"
 	"api/internal/updater/image"
@@ -8,17 +17,11 @@ import (
 	"cloud.google.com/go/translate"
 	"cloud.google.com/go/vision/v2/apiv1"
 	"cloud.google.com/go/vision/v2/apiv1/visionpb"
-	"context"
+
 	"firebase.google.com/go"
-	"fmt"
+
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
-	"io"
-	"net/http"
-	"os"
-	"sort"
-	"strings"
-	"time"
 )
 
 const (

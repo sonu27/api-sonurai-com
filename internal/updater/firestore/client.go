@@ -1,10 +1,12 @@
 package firestore
 
 import (
-	"api/internal/updater/image"
-	"cloud.google.com/go/firestore"
 	"context"
 	"encoding/json"
+
+	"api/internal/updater/image"
+	"cloud.google.com/go/firestore"
+
 	firebase "firebase.google.com/go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

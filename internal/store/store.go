@@ -106,7 +106,6 @@ func (s *Store) List(ctx context.Context, q ListQuery) ([]Wallpaper, error) {
 		query = query.
 			OrderBy("date", firestore.Asc).
 			OrderBy("id", firestore.Desc)
-
 	} else {
 		query = query.
 			OrderBy("date", firestore.Desc).

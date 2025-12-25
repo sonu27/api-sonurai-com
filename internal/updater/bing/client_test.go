@@ -1,14 +1,16 @@
 package bing_test
 
 import (
-	"api/internal/updater/bing"
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"api/internal/updater/bing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const bingResponse = `{

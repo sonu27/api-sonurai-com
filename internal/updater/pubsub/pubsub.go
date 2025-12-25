@@ -3,6 +3,7 @@ package pubsub
 import (
 	"context"
 	"fmt"
+
 	"google.golang.org/api/option"
 
 	"cloud.google.com/go/pubsub"

@@ -231,7 +231,7 @@ func (u *Updater) detectLabels(ctx context.Context, url string) ([]*visionpb.Ent
 }
 
 func (u *Updater) downloadFile(ctx context.Context, url string, name string) error {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -242,6 +242,10 @@ func (u *Updater) downloadFile(ctx context.Context, url string, name string) err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download file: unexpected status %d", resp.StatusCode)
+	}
+
 	objWriter := u.bucket.Object(name).NewWriter(ctx)
 
 	_, err = io.Copy(objWriter, resp.Body)
@@ -249,9 +253,8 @@ func (u *Updater) downloadFile(ctx context.Context, url string, name string) err
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
-	err = objWriter.Close()
-	if err != nil {
-		return err
+	if err = objWriter.Close(); err != nil {
+		return fmt.Errorf("failed to close object writer: %w", err)
 	}
 
 	return nil
@@ -279,10 +282,18 @@ func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, ou
 }
 
 func (u *Updater) fileExists(url string) bool {
-	req, _ := http.NewRequest(http.MethodHead, url, nil)
-	resp, _ := u.httpClient.Do(req)
+	req, err := http.NewRequest(http.MethodHead, url, nil)
+	if err != nil {
+		return false
+	}
 
-	return resp.StatusCode == 200
+	resp, err := u.httpClient.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK
 }
 
 func (u *Updater) translateText(ctx context.Context, text string) (string, error) {

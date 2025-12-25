@@ -14,9 +14,7 @@ COPY ./ ./
 RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -buildvcs=false -mod=readonly -o /app ./cmd/app
 
-FROM gcr.io/distroless/static-debian11
-
-USER nonroot:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY --from=builder --chown=nonroot:nonroot /app /app
 

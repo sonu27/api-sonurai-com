@@ -7,30 +7,37 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+  pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    strategy:
-      matrix:
-        go: [ 'stable' ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v6
         with:
-          go-version: ${{ matrix.go }}
-          check-latest: true
+          go-version: stable
 
       - name: Go Format
-        run: gofmt -s -w . && git diff --exit-code
+        run: |
+          unformatted=$(gofmt -s -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Files need formatting:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Go Mod Download
+        run: go mod download
 
       - name: Go Tidy
         run: go mod tidy && git diff --exit-code
-
-      - name: Go Mod
-        run: go mod download
 
       - name: Go Mod Verify
         run: go mod verify

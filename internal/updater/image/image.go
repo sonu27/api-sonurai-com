@@ -9,18 +9,18 @@ import (
 )
 
 type Image struct {
-	ID        string `json:"id"`
-	Title     string `json:"title,omitempty"`
-	Copyright string `json:"copyright,omitempty"`
-	Date      int    `json:"date,omitempty"`
-	Filename  string `json:"filename,omitempty"`
-	Market    string `json:"market,omitempty"`
-	FullDesc  string `json:"fullDesc,omitempty"`
-	URL       string `json:"url,omitempty"`
-	ThumbURL  string `json:"thumbUrl,omitempty"`
+	ID        string `json:"id" firestore:"id"`
+	Title     string `json:"title,omitempty" firestore:"title,omitempty"`
+	Copyright string `json:"copyright,omitempty" firestore:"copyright,omitempty"`
+	Date      int    `json:"date,omitempty" firestore:"date,omitempty"`
+	Filename  string `json:"filename,omitempty" firestore:"filename,omitempty"`
+	Market    string `json:"market,omitempty" firestore:"market,omitempty"`
+	FullDesc  string `json:"fullDesc,omitempty" firestore:"fullDesc,omitempty"`
+	URL       string `json:"url,omitempty" firestore:"url,omitempty"`
+	ThumbURL  string `json:"thumbUrl,omitempty" firestore:"thumbUrl,omitempty"`
 
-	Tags        map[string]float32 `json:"tags,omitempty"`
-	TagsOrdered []string           `json:"tagsOrdered,omitempty"`
+	Tags        map[string]float32 `json:"tags,omitempty" firestore:"tags,omitempty"`
+	TagsOrdered []string           `json:"tagsOrdered,omitempty" firestore:"tagsOrdered,omitempty"`
 }
 
 func From(bw bing.Image, market string, bingURL string) (Image, error) {

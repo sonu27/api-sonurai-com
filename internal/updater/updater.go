@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -20,7 +21,6 @@ import (
 
 	"firebase.google.com/go"
 
-	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 )
 

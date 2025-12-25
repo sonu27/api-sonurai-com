@@ -2,7 +2,6 @@ package firestore
 
 import (
 	"context"
-	"encoding/json"
 
 	"api/internal/updater/image"
 	"cloud.google.com/go/firestore"
@@ -35,13 +34,8 @@ func (c *Client) Get(ctx context.Context, ID string) (*image.Image, error) {
 		return nil, err
 	}
 
-	b, err := json.Marshal(dsnap.Data())
-	if err != nil {
-		return nil, err
-	}
-
 	var result image.Image
-	if err := json.Unmarshal(b, &result); err != nil {
+	if err := dsnap.DataTo(&result); err != nil {
 		return nil, err
 	}
 
@@ -53,14 +47,5 @@ func (c *Client) Get(ctx context.Context, ID string) (*image.Image, error) {
 }
 
 func (c *Client) Upsert(ctx context.Context, img image.Image) (*firestore.WriteResult, error) {
-	var out map[string]any
-	inrec, err := json.Marshal(img)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(inrec, &out); err != nil {
-		return nil, err
-	}
-
-	return c.firestore.Collection(c.collection).Doc(img.ID).Set(ctx, out, firestore.MergeAll)
+	return c.firestore.Collection(c.collection).Doc(img.ID).Set(ctx, img, firestore.MergeAll)
 }

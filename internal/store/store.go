@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
@@ -131,7 +131,7 @@ func (s *Store) List(ctx context.Context, q ListQuery) ([]Wallpaper, error) {
 	}
 
 	if q.Reverse {
-		reverse(wallpapers)
+		slices.Reverse(wallpapers)
 	}
 
 	return wallpapers, nil
@@ -177,10 +177,4 @@ func extractTagScore(data map[string]any, tag string) float64 {
 		return 0
 	}
 	return score
-}
-
-func reverse[T comparable](s []T) {
-	sort.SliceStable(s, func(i, j int) bool {
-		return i > j
-	})
 }

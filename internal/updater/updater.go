@@ -194,17 +194,14 @@ func (u *Updater) Update(ctx context.Context) error {
 		}
 		// end: duplicate tags to t
 
-		// Extract up to 4 dominant colors as RGB values
+		// Extract up to 4 dominant colors as hex strings
 		if props := anno.GetImagePropertiesAnnotation(); props != nil {
 			if dc := props.GetDominantColors(); dc != nil {
 				colors := dc.GetColors()
 				for i := range min(4, len(colors)) {
 					c := colors[i].GetColor()
-					image.Colors = append(image.Colors, imgpkg.RGB{
-						int(c.GetRed()),
-						int(c.GetGreen()),
-						int(c.GetBlue()),
-					})
+					rgb := imgpkg.RGB{int(c.GetRed()), int(c.GetGreen()), int(c.GetBlue())}
+					image.Colors = append(image.Colors, rgb.ToHex())
 				}
 			}
 		}

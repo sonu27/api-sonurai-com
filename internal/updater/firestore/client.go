@@ -47,5 +47,5 @@ func (c *Client) Get(ctx context.Context, ID string) (*image.Image, error) {
 }
 
 func (c *Client) Upsert(ctx context.Context, img image.Image) (*firestore.WriteResult, error) {
-	return c.firestore.Collection(c.collection).Doc(img.ID).Set(ctx, img, firestore.MergeAll)
+	return c.firestore.Collection(c.collection).Doc(img.ID).Set(ctx, img)
 }

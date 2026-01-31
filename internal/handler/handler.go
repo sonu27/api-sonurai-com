@@ -56,6 +56,7 @@ func (h Handler) GetWallpaper(ctx context.Context, p api.GetWallpaperParams) (ap
 		Date:      api.Date(wp.Date),
 		Filename:  wp.Filename,
 		Market:    wp.Market,
+		UrlBase:   wp.URLBase,
 		Tags:      wp.Tags,
 		Colors:    wp.Colors,
 	}, nil

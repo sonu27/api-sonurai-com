@@ -365,6 +365,7 @@ type Wallpaper struct {
 	Date      Date   `json:"date"`
 	Filename  string `json:"filename"`
 	Market    string `json:"market"`
+	UrlBase   string `json:"urlBase"`
 	// Dominant colors as hex strings (e.g., "#4A90D9").
 	Colors []string `json:"colors"`
 }
@@ -397,6 +398,11 @@ func (s *Wallpaper) GetFilename() string {
 // GetMarket returns the value of Market.
 func (s *Wallpaper) GetMarket() string {
 	return s.Market
+}
+
+// GetUrlBase returns the value of UrlBase.
+func (s *Wallpaper) GetUrlBase() string {
+	return s.UrlBase
 }
 
 // GetColors returns the value of Colors.
@@ -432,6 +438,11 @@ func (s *Wallpaper) SetFilename(val string) {
 // SetMarket sets the value of Market.
 func (s *Wallpaper) SetMarket(val string) {
 	s.Market = val
+}
+
+// SetUrlBase sets the value of UrlBase.
+func (s *Wallpaper) SetUrlBase(val string) {
+	s.UrlBase = val
 }
 
 // SetColors sets the value of Colors.
@@ -477,6 +488,7 @@ type WallpaperWithTags struct {
 	Date      Date   `json:"date"`
 	Filename  string `json:"filename"`
 	Market    string `json:"market"`
+	UrlBase   string `json:"urlBase"`
 	// Dominant colors as hex strings (e.g., "#4A90D9").
 	Colors []string              `json:"colors"`
 	Tags   WallpaperWithTagsTags `json:"tags"`
@@ -510,6 +522,11 @@ func (s *WallpaperWithTags) GetFilename() string {
 // GetMarket returns the value of Market.
 func (s *WallpaperWithTags) GetMarket() string {
 	return s.Market
+}
+
+// GetUrlBase returns the value of UrlBase.
+func (s *WallpaperWithTags) GetUrlBase() string {
+	return s.UrlBase
 }
 
 // GetColors returns the value of Colors.
@@ -550,6 +567,11 @@ func (s *WallpaperWithTags) SetFilename(val string) {
 // SetMarket sets the value of Market.
 func (s *WallpaperWithTags) SetMarket(val string) {
 	s.Market = val
+}
+
+// SetUrlBase sets the value of UrlBase.
+func (s *WallpaperWithTags) SetUrlBase(val string) {
+	s.UrlBase = val
 }
 
 // SetColors sets the value of Colors.

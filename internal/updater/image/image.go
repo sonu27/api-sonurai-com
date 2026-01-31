@@ -25,15 +25,17 @@ type Image struct {
 	Market    string `json:"market,omitempty" firestore:"market,omitempty"`
 	URLBase   string `json:"urlBase,omitempty" firestore:"urlBase,omitempty"`
 	FullDesc  string `json:"fullDesc,omitempty" firestore:"fullDesc,omitempty"`
-	URL       string `json:"url,omitempty" firestore:"url,omitempty"`
-	ThumbURL  string `json:"thumbUrl,omitempty" firestore:"thumbUrl,omitempty"`
 
 	Tags        map[string]float32 `json:"tags,omitempty" firestore:"tags,omitempty"`
 	TagsOrdered []string           `json:"tagsOrdered,omitempty" firestore:"tagsOrdered,omitempty"`
 	Colors      []string           `json:"colors,omitempty" firestore:"colors,omitempty"` // Hex strings like "#4A90D9"
 }
 
-func From(bw bing.Image, market string, bingURL string) (Image, error) {
+func (i Image) URL(bingURL string) string {
+	return bingURL + i.URLBase + "_1920x1200.jpg"
+}
+
+func From(bw bing.Image, market string) (Image, error) {
 	fullDesc := bw.Copyright
 	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
 	id = strings.Replace(id, "/th?id=OHR.", "", 1)
@@ -61,8 +63,6 @@ func From(bw bing.Image, market string, bingURL string) (Image, error) {
 		Market:    market,
 		URLBase:   bw.URLBase,
 		FullDesc:  fullDesc,
-		URL:       bingURL + bw.URLBase + "_1920x1200.jpg",
-		ThumbURL:  bingURL + bw.URLBase + "_1920x1080.jpg",
 		Tags:      make(map[string]float32),
 	}
 

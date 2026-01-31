@@ -146,14 +146,15 @@ func (u *Updater) Update(ctx context.Context) error {
 			continue
 		}
 
-		if !u.fileExists(image.URL) {
+		imageURL := image.URL(bingURL)
+		if !u.fileExists(imageURL) {
 			continue
 		}
 
 		fmt.Printf("%s new wallpaper found\n", image.ID)
 
 		// todo: add retry if error
-		if err := u.downloadFile(ctx, image.URL, image.Filename+".jpg"); err != nil {
+		if err := u.downloadFile(ctx, imageURL, image.Filename+".jpg"); err != nil {
 			return err
 		}
 
@@ -296,7 +297,7 @@ func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, ou
 		}
 
 		for _, v := range bi {
-			image, err := imgpkg.From(v, market, bingURL)
+			image, err := imgpkg.From(v, market)
 			if err != nil {
 				return err
 			}

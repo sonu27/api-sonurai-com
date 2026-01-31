@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"slices"
@@ -14,7 +13,6 @@ import (
 	"api/internal/updater/bing"
 	"api/internal/updater/firestore"
 	imgpkg "api/internal/updater/image"
-	"cloud.google.com/go/storage"
 	"cloud.google.com/go/translate"
 	"cloud.google.com/go/vision/v2/apiv1"
 	"cloud.google.com/go/vision/v2/apiv1/visionpb"
@@ -27,7 +25,6 @@ import (
 const (
 	TopicID             = "update-wallpapers-v2"
 	SubID               = "update-wallpapers-v2-sub"
-	bucketName          = "images.sonurai.com"
 	firestoreCollection = "BingWallpapers"
 	bingURL             = "https://www.bing.com"
 )
@@ -68,19 +65,6 @@ func New() (*Updater, error) {
 		return nil, err
 	}
 
-	storageClient, err := firebaseClient.Storage(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	bucket, err := storageClient.Bucket(bucketName)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := bucket.Attrs(ctx); err != nil {
-		return nil, err
-	}
-
 	annoClient, err := vision.NewImageAnnotatorClient(ctx)
 	if err != nil {
 		return nil, err
@@ -93,9 +77,7 @@ func New() (*Updater, error) {
 
 	return &Updater{
 		annoClient:      annoClient,
-		bucket:          bucket,
 		firestoreClient: firestoreClient,
-		httpClient:      httpClient,
 		imageClient:     imageClient,
 		translateClient: translateClient,
 	}, nil
@@ -103,9 +85,7 @@ func New() (*Updater, error) {
 
 type Updater struct {
 	annoClient      *vision.ImageAnnotatorClient
-	bucket          *storage.BucketHandle
 	firestoreClient *firestore.Client
-	httpClient      *http.Client
 	imageClient     *bing.Client
 	translateClient *translate.Client
 }
@@ -146,17 +126,7 @@ func (u *Updater) Update(ctx context.Context) error {
 			continue
 		}
 
-		imageURL := image.URL(bingURL)
-		if !u.fileExists(imageURL) {
-			continue
-		}
-
 		fmt.Printf("%s new wallpaper found\n", image.ID)
-
-		// todo: add retry if error
-		if err := u.downloadFile(ctx, imageURL, image.Filename+".jpg"); err != nil {
-			return err
-		}
 
 		// translate title if not english
 		if slices.Contains(nonENMarkets, image.Market) {
@@ -168,7 +138,7 @@ func (u *Updater) Update(ctx context.Context) error {
 			}
 		}
 
-		anno, err := u.annotateImage(ctx, image.Filename+".jpg")
+		anno, err := u.annotateImage(ctx, image.URL(bingURL))
 		if err != nil {
 			return err
 		}
@@ -219,13 +189,12 @@ func (u *Updater) Update(ctx context.Context) error {
 }
 
 func (u *Updater) annotateImage(ctx context.Context, url string) (*visionpb.AnnotateImageResponse, error) {
-	url = fmt.Sprintf("gs://%s/%s", bucketName, url)
 	req := &visionpb.BatchAnnotateImagesRequest{
 		Requests: []*visionpb.AnnotateImageRequest{
 			{
 				Image: &visionpb.Image{
 					Source: &visionpb.ImageSource{
-						GcsImageUri: url,
+						ImageUri: url,
 					},
 				},
 				Features: []*visionpb.Feature{
@@ -259,36 +228,6 @@ func (u *Updater) annotateImage(ctx context.Context, url string) (*visionpb.Anno
 	return resp, nil
 }
 
-func (u *Updater) downloadFile(ctx context.Context, url string, name string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	resp, err := u.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to download file: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: unexpected status %d", resp.StatusCode)
-	}
-
-	objWriter := u.bucket.Object(name).NewWriter(ctx)
-
-	_, err = io.Copy(objWriter, resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
-	}
-
-	if err = objWriter.Close(); err != nil {
-		return fmt.Errorf("failed to close object writer: %w", err)
-	}
-
-	return nil
-}
-
 func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, out map[string]imgpkg.Image) error {
 	for _, market := range markets {
 		bi, err := u.imageClient.List(ctx, market)
@@ -297,6 +236,10 @@ func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, ou
 		}
 
 		for _, v := range bi {
+			if !v.WP {
+				continue
+			}
+
 			image, err := imgpkg.From(v, market)
 			if err != nil {
 				return err
@@ -308,21 +251,6 @@ func (u *Updater) fetchAndDedupeImages(ctx context.Context, markets []string, ou
 		}
 	}
 	return nil
-}
-
-func (u *Updater) fileExists(url string) bool {
-	req, err := http.NewRequest(http.MethodHead, url, nil)
-	if err != nil {
-		return false
-	}
-
-	resp, err := u.httpClient.Do(req)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	return resp.StatusCode == http.StatusOK
 }
 
 func (u *Updater) translateText(ctx context.Context, text string) (string, error) {

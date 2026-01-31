@@ -32,7 +32,7 @@ type Image struct {
 }
 
 func (i Image) URL(bingURL string) string {
-	return bingURL + i.URLBase + "_1920x1200.jpg"
+	return bingURL + i.URLBase + "_1920x1080.jpg"
 }
 
 func From(bw bing.Image, market string) (Image, error) {

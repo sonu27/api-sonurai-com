@@ -138,6 +138,8 @@ components:
           type: string
         market:
           type: string
+        urlBase:
+          type: string
         colors:
           type: array
           items:
@@ -150,6 +152,7 @@ components:
         - date
         - filename
         - market
+        - urlBase
     WallpaperList:
       type: object
       properties:

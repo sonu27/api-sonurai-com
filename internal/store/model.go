@@ -11,6 +11,7 @@ type Wallpaper struct {
 	Date      int      `json:"date" firestore:"date"`
 	Filename  string   `json:"filename" firestore:"filename"`
 	Market    string   `json:"market" firestore:"market"`
+	URLBase   string   `json:"urlBase" firestore:"urlBase"`
 	Colors    []string `json:"colors,omitempty" firestore:"colors,omitempty"` // Hex strings like "#4A90D9"
 }
 
@@ -30,6 +31,7 @@ func ToAPI(w []Wallpaper) []api.Wallpaper {
 			Date:      api.Date(v.Date),
 			Filename:  v.Filename,
 			Market:    v.Market,
+			UrlBase:   v.URLBase,
 			Colors:    v.Colors,
 		}
 	}

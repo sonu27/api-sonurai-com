@@ -23,6 +23,7 @@ type Image struct {
 	Date      int    `json:"date,omitempty" firestore:"date,omitempty"`
 	Filename  string `json:"filename,omitempty" firestore:"filename,omitempty"`
 	Market    string `json:"market,omitempty" firestore:"market,omitempty"`
+	URLBase   string `json:"urlBase,omitempty" firestore:"urlBase,omitempty"`
 	FullDesc  string `json:"fullDesc,omitempty" firestore:"fullDesc,omitempty"`
 	URL       string `json:"url,omitempty" firestore:"url,omitempty"`
 	ThumbURL  string `json:"thumbUrl,omitempty" firestore:"thumbUrl,omitempty"`
@@ -58,6 +59,7 @@ func From(bw bing.Image, market string, bingURL string) (Image, error) {
 		Date:      date,
 		Filename:  id,
 		Market:    market,
+		URLBase:   bw.URLBase,
 		FullDesc:  fullDesc,
 		URL:       bingURL + bw.URLBase + "_1920x1200.jpg",
 		ThumbURL:  bingURL + bw.URLBase + "_1920x1080.jpg",

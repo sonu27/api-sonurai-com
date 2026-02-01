@@ -67,8 +67,12 @@ func From(bw bing.Image, market string) (Image, error) {
 // parseCopyright extracts the title and copyright from Bing's copyright string.
 // Bing formats: "Title (© Attribution)" or "Title（© Attribution）" (Chinese)
 func parseCopyright(raw string) (title, copyright string, err error) {
+	// Normalize: handle Chinese parentheses with space before © symbol
+	// e.g., "【Title】 （ © Attribution ）" -> "【Title】 （© Attribution ）"
+	normalized := strings.ReplaceAll(raw, "（ ©", "（©")
+
 	// Try Chinese fullwidth parentheses first: （©
-	if parts := strings.Split(raw, "（©"); len(parts) == 2 {
+	if parts := strings.Split(normalized, "（©"); len(parts) == 2 {
 		title = strings.TrimSpace(parts[0])
 		copyright = strings.TrimSpace(strings.TrimSuffix(parts[1], "）"))
 		return title, copyright, nil

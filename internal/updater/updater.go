@@ -3,6 +3,7 @@ package updater
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"slices"
@@ -81,6 +82,7 @@ func New() (*Updater, error) {
 	return &Updater{
 		annoClient:      annoClient,
 		firestoreClient: firestoreClient,
+		httpClient:      httpClient,
 		imageClient:     imageClient,
 		translateClient: translateClient,
 	}, nil
@@ -89,6 +91,7 @@ func New() (*Updater, error) {
 type Updater struct {
 	annoClient      *vision.ImageAnnotatorClient
 	firestoreClient *firestore.Client
+	httpClient      *http.Client
 	imageClient     *bing.Client
 	translateClient *translate.Client
 }
@@ -204,13 +207,32 @@ func (u *Updater) Update(ctx context.Context) error {
 }
 
 func (u *Updater) annotateImage(ctx context.Context, url string) (*visionpb.AnnotateImageResponse, error) {
+	// Download image first since Vision API can't access Bing URLs directly
+	imgReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create image request: %w", err)
+	}
+
+	imgResp, err := u.httpClient.Do(imgReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download image from %s: %w", url, err)
+	}
+	defer imgResp.Body.Close()
+
+	if imgResp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to download image from %s: status %d", url, imgResp.StatusCode)
+	}
+
+	imgBytes, err := io.ReadAll(imgResp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image from %s: %w", url, err)
+	}
+
 	req := &visionpb.BatchAnnotateImagesRequest{
 		Requests: []*visionpb.AnnotateImageRequest{
 			{
 				Image: &visionpb.Image{
-					Source: &visionpb.ImageSource{
-						ImageUri: url,
-					},
+					Content: imgBytes,
 				},
 				Features: []*visionpb.Feature{
 					{

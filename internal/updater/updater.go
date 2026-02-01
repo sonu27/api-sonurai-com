@@ -36,6 +36,7 @@ var (
 		"en-CA",
 		"en-AU",
 		"en-NZ",
+		"en-IN",
 	}
 
 	nonENMarkets = []string{
@@ -44,6 +45,8 @@ var (
 		"es-ES",
 		"zh-CN",
 		"ja-JP",
+		"it-IT",
+		"pt-BR",
 	}
 )
 

@@ -134,8 +134,6 @@ components:
           type: string
         date:
           $ref: '#/components/schemas/Date'
-        filename:
-          type: string
         market:
           type: string
         urlBase:
@@ -150,7 +148,6 @@ components:
         - title
         - copyright
         - date
-        - filename
         - market
         - urlBase
     WallpaperList:

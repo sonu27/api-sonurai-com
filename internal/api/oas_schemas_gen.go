@@ -363,7 +363,6 @@ type Wallpaper struct {
 	Title     string `json:"title"`
 	Copyright string `json:"copyright"`
 	Date      Date   `json:"date"`
-	Filename  string `json:"filename"`
 	Market    string `json:"market"`
 	UrlBase   string `json:"urlBase"`
 	// Dominant colors as hex strings (e.g., "#4A90D9").
@@ -388,11 +387,6 @@ func (s *Wallpaper) GetCopyright() string {
 // GetDate returns the value of Date.
 func (s *Wallpaper) GetDate() Date {
 	return s.Date
-}
-
-// GetFilename returns the value of Filename.
-func (s *Wallpaper) GetFilename() string {
-	return s.Filename
 }
 
 // GetMarket returns the value of Market.
@@ -428,11 +422,6 @@ func (s *Wallpaper) SetCopyright(val string) {
 // SetDate sets the value of Date.
 func (s *Wallpaper) SetDate(val Date) {
 	s.Date = val
-}
-
-// SetFilename sets the value of Filename.
-func (s *Wallpaper) SetFilename(val string) {
-	s.Filename = val
 }
 
 // SetMarket sets the value of Market.
@@ -486,7 +475,6 @@ type WallpaperWithTags struct {
 	Title     string `json:"title"`
 	Copyright string `json:"copyright"`
 	Date      Date   `json:"date"`
-	Filename  string `json:"filename"`
 	Market    string `json:"market"`
 	UrlBase   string `json:"urlBase"`
 	// Dominant colors as hex strings (e.g., "#4A90D9").
@@ -512,11 +500,6 @@ func (s *WallpaperWithTags) GetCopyright() string {
 // GetDate returns the value of Date.
 func (s *WallpaperWithTags) GetDate() Date {
 	return s.Date
-}
-
-// GetFilename returns the value of Filename.
-func (s *WallpaperWithTags) GetFilename() string {
-	return s.Filename
 }
 
 // GetMarket returns the value of Market.
@@ -557,11 +540,6 @@ func (s *WallpaperWithTags) SetCopyright(val string) {
 // SetDate sets the value of Date.
 func (s *WallpaperWithTags) SetDate(val Date) {
 	s.Date = val
-}
-
-// SetFilename sets the value of Filename.
-func (s *WallpaperWithTags) SetFilename(val string) {
-	s.Filename = val
 }
 
 // SetMarket sets the value of Market.

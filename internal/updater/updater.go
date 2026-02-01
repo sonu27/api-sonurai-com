@@ -111,16 +111,28 @@ func (u *Updater) Update(ctx context.Context) error {
 			return err
 		}
 
-		// if exists as non-english, and new existingImage is english, update it
+		// if exists, check if we need to update
 		if existingImage != nil {
-			if !slices.Contains(nonENMarkets, existingImage.Market) || !slices.Contains(ENMarkets, image.Market) {
+			// Check if we need to update: either missing urlBase OR upgrading to English
+			needsURLBaseUpdate := existingImage.URLBase == ""
+			needsMarketUpgrade := slices.Contains(nonENMarkets, existingImage.Market) && slices.Contains(ENMarkets, image.Market)
+
+			if !needsURLBaseUpdate && !needsMarketUpgrade {
 				continue
 			}
 
 			// maintain old date
 			image.Date = existingImage.Date
 
-			_, err = u.firestoreClient.Upsert(ctx, image)
+			// If only updating urlBase (not upgrading market), preserve existing fields
+			if needsURLBaseUpdate && !needsMarketUpgrade {
+				existingImage.URLBase = image.URLBase
+				_, err = u.firestoreClient.Upsert(ctx, *existingImage)
+			} else {
+				// Full update (market upgrade case)
+				_, err = u.firestoreClient.Upsert(ctx, image)
+			}
+
 			if err != nil {
 				return err
 			}

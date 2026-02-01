@@ -288,10 +288,6 @@ func (s *Wallpaper) encodeFields(e *jx.Encoder) {
 		s.Date.Encode(e)
 	}
 	{
-		e.FieldStart("filename")
-		e.Str(s.Filename)
-	}
-	{
 		e.FieldStart("market")
 		e.Str(s.Market)
 	}
@@ -311,15 +307,14 @@ func (s *Wallpaper) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWallpaper = [8]string{
+var jsonFieldsNameOfWallpaper = [7]string{
 	0: "id",
 	1: "title",
 	2: "copyright",
 	3: "date",
-	4: "filename",
-	5: "market",
-	6: "urlBase",
-	7: "colors",
+	4: "market",
+	5: "urlBase",
+	6: "colors",
 }
 
 // Decode decodes Wallpaper from json.
@@ -375,20 +370,8 @@ func (s *Wallpaper) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"date\"")
 			}
-		case "filename":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				v, err := d.Str()
-				s.Filename = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"filename\"")
-			}
 		case "market":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.Market = string(v)
@@ -400,7 +383,7 @@ func (s *Wallpaper) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"market\"")
 			}
 		case "urlBase":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.UrlBase = string(v)
@@ -440,7 +423,7 @@ func (s *Wallpaper) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -633,10 +616,6 @@ func (s *WallpaperWithTags) encodeFields(e *jx.Encoder) {
 		s.Date.Encode(e)
 	}
 	{
-		e.FieldStart("filename")
-		e.Str(s.Filename)
-	}
-	{
 		e.FieldStart("market")
 		e.Str(s.Market)
 	}
@@ -660,16 +639,15 @@ func (s *WallpaperWithTags) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWallpaperWithTags = [9]string{
+var jsonFieldsNameOfWallpaperWithTags = [8]string{
 	0: "id",
 	1: "title",
 	2: "copyright",
 	3: "date",
-	4: "filename",
-	5: "market",
-	6: "urlBase",
-	7: "colors",
-	8: "tags",
+	4: "market",
+	5: "urlBase",
+	6: "colors",
+	7: "tags",
 }
 
 // Decode decodes WallpaperWithTags from json.
@@ -677,7 +655,7 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode WallpaperWithTags to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -725,20 +703,8 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"date\"")
 			}
-		case "filename":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				v, err := d.Str()
-				s.Filename = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"filename\"")
-			}
 		case "market":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.Market = string(v)
@@ -750,7 +716,7 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"market\"")
 			}
 		case "urlBase":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.UrlBase = string(v)
@@ -781,7 +747,7 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"colors\"")
 			}
 		case "tags":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.Tags.Decode(d); err != nil {
 					return err
@@ -799,9 +765,8 @@ func (s *WallpaperWithTags) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b01111111,
-		0b00000001,
+	for i, mask := range [1]uint8{
+		0b10111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

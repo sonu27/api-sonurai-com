@@ -21,7 +21,6 @@ type Image struct {
 	Title     string `json:"title,omitempty" firestore:"title,omitempty"`
 	Copyright string `json:"copyright,omitempty" firestore:"copyright,omitempty"`
 	Date      int    `json:"date,omitempty" firestore:"date,omitempty"`
-	Filename  string `json:"filename,omitempty" firestore:"filename,omitempty"`
 	Market    string `json:"market,omitempty" firestore:"market,omitempty"`
 	URLBase   string `json:"urlBase,omitempty" firestore:"urlBase,omitempty"`
 	FullDesc  string `json:"fullDesc,omitempty" firestore:"fullDesc,omitempty"`
@@ -59,7 +58,6 @@ func From(bw bing.Image, market string) (Image, error) {
 		Title:     title,
 		Copyright: copyright,
 		Date:      date,
-		Filename:  id,
 		Market:    market,
 		URLBase:   bw.URLBase,
 		FullDesc:  fullDesc,

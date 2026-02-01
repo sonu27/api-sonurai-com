@@ -50,9 +50,6 @@ func From(bw bing.Image, market string) (Image, error) {
 		return Image{}, err
 	}
 
-	title = strings.TrimSpace(title)
-	copyright = strings.TrimSpace(copyright)
-
 	image := Image{
 		ID:        id,
 		Title:     title,
@@ -72,28 +69,28 @@ func From(bw bing.Image, market string) (Image, error) {
 func parseCopyright(raw string) (title, copyright string, err error) {
 	// Try Chinese fullwidth parentheses first: （©
 	if parts := strings.Split(raw, "（©"); len(parts) == 2 {
-		title = parts[0]
-		copyright = "© " + strings.TrimSuffix(parts[1], "）")
+		title = strings.TrimSpace(parts[0])
+		copyright = strings.TrimSpace(strings.TrimSuffix(parts[1], "）"))
 		return title, copyright, nil
 	}
 
 	// Try standard parentheses: (©
 	if parts := strings.Split(raw, "(©"); len(parts) == 2 {
-		title = parts[0]
-		copyright = "© " + strings.TrimSuffix(parts[1], ")")
+		title = strings.TrimSpace(parts[0])
+		copyright = strings.TrimSpace(strings.TrimSuffix(parts[1], ")"))
 		return title, copyright, nil
 	}
 
 	// Try just © symbol
 	if parts := strings.Split(raw, "©"); len(parts) == 2 {
-		title = parts[0]
-		copyright = "© " + strings.TrimSuffix(parts[1], ")")
+		title = strings.TrimSpace(parts[0])
+		copyright = strings.TrimSpace(strings.TrimSuffix(parts[1], ")"))
 		return title, copyright, nil
 	}
 
 	// No copyright symbol found - use the whole string as title
 	if raw != "" {
-		return raw, "", nil
+		return strings.TrimSpace(raw), "", nil
 	}
 
 	return "", "", fmt.Errorf("unable to parse copyright from empty string")

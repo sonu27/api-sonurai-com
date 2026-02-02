@@ -156,7 +156,7 @@ func (u *Updater) Update(ctx context.Context) error {
 			}
 		}
 
-		anno, err := u.annotateImage(ctx, image.URL(bingURL))
+		anno, err := u.annotateImage(ctx, image.URL())
 		if err != nil {
 			return err
 		}

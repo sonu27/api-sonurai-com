@@ -8,6 +8,8 @@ import (
 	"api/internal/updater/bing"
 )
 
+const bingURL = "https://www.bing.com"
+
 // RGB represents a color as [R, G, B] values (0-255).
 type RGB [3]int
 
@@ -30,8 +32,8 @@ type Image struct {
 	Colors      []string           `json:"colors,omitempty" firestore:"colors,omitempty"` // Hex strings like "#4A90D9"
 }
 
-func (i Image) URL(bingURL string) string {
-	return bingURL + i.URLBase + "_1920x1080.jpg"
+func (i Image) URL() string {
+	return i.URLBase + "_1920x1080.jpg"
 }
 
 func From(bw bing.Image, market string) (Image, error) {
@@ -39,6 +41,8 @@ func From(bw bing.Image, market string) (Image, error) {
 	id := strings.Replace(bw.URLBase, "/az/hprichbg/rb/", "", 1)
 	id = strings.Replace(id, "/th?id=OHR.", "", 1)
 	id = strings.Split(id, "_")[0]
+
+	urlBase := bingURL + bw.URLBase
 
 	date, err := strconv.Atoi(bw.StartDate)
 	if err != nil {
@@ -56,7 +60,7 @@ func From(bw bing.Image, market string) (Image, error) {
 		Copyright: copyright,
 		Date:      date,
 		Market:    market,
-		URLBase:   bw.URLBase,
+		URLBase:   urlBase,
 		FullDesc:  fullDesc,
 		Tags:      make(map[string]float32),
 	}
